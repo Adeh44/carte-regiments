@@ -1,5 +1,5 @@
-// Version : 76b4040e4e
-const CACHE = "regiments-76b4040e4e";
+// Version : c83889c2e0
+const CACHE = "regiments-c83889c2e0";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -18,16 +18,19 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   // La page : réseau d'abord (pour recevoir les mises à jour), copie locale si pas de réseau.
   if (req.mode === "navigate") {
-    e.respondWith(fetch(req).then(r => {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000));
+    e.respondWith(Promise.race([fetch(req), timeout]).then(r => {
       const copy = r.clone(); caches.open(CACHE).then(c => c.put("./", copy)); return r;
     }).catch(() => caches.match("./").then(r => r || caches.match("index.html"))));
     return;
   }
   // Icônes, manifeste et polices Google : copie locale d'abord, réseau sinon.
   if (url.origin === location.origin || url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com")) {
-    e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => {
+    // Sans réseau, on n'attend jamais plus de 3 secondes.
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000));
+    e.respondWith(caches.match(req).then(hit => hit || Promise.race([fetch(req), timeout]).then(r => {
       if (r.ok || r.type === "opaque") { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
       return r;
-    })));
+    }).catch(() => new Response("", { status: 504 }))));
   }
 });
