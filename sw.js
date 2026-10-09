@@ -1,5 +1,5 @@
-// Version : 75a38748a7
-const CACHE = "regiments-75a38748a7";
+// Version : 928b7320da
+const CACHE = "regiments-928b7320da";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
