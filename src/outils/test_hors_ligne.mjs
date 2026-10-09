@@ -1,0 +1,23 @@
+import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+import { spawn } from 'node:child_process';
+const [dir, out] = process.argv.slice(2);
+const srv = spawn('python3', ['-I', '-m', 'http.server', '8774', '--bind', '127.0.0.1', '--directory', dir], { stdio: 'ignore' });
+await new Promise(r => setTimeout(r, 800));
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, isMobile: true, hasTouch: true, serviceWorkers: 'allow' });
+// Les polices ne répondent jamais : on simule un réseau qui « pend »
+await ctx.route(/fonts\.(googleapis|gstatic)/, () => {});
+const p = await ctx.newPage();
+const errs = []; p.on('pageerror', e => errs.push(e.message));
+let t0 = Date.now();
+await p.goto('http://127.0.0.1:8774/', { waitUntil: 'domcontentloaded' });
+await p.waitForFunction(() => document.querySelectorAll('.leaflet-marker-icon').length > 100, null, { timeout: 15000 });
+console.log('en ligne, polices bloquées : carte affichée en', Date.now() - t0, 'ms');
+await p.waitForTimeout(4000); console.log('sw', await p.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r && r.active ? r.active.state : 'none')));
+srv.kill(); await ctx.setOffline(true);
+t0 = Date.now();
+await p.reload({ waitUntil: 'domcontentloaded' });
+await p.waitForFunction(() => document.querySelectorAll('.leaflet-marker-icon').length > 100, null, { timeout: 15000 });
+console.log('hors ligne : carte affichée en', Date.now() - t0, 'ms');
+await p.waitForTimeout(800); await p.screenshot({ path: out });
+console.log('errors', errs); await b.close(); process.exit(0);

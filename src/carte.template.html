@@ -1,0 +1,802 @@
+<title>Carte des régiments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Polices chargées par le script (non bloquant) : sans réseau, la carte démarre quand même. -->
+<style>
+/*__LEAFLET_CSS__*/
+/* Layout : panneau d'état-major à gauche, carte plein écran à droite ; sur téléphone le panneau devient un tiroir. */
+:root {
+  --paper: #eceee4;
+  --panel: #f6f7f1;
+  --ink: #1f241c;
+  --ink-soft: #5b6253;
+  --line: #c9cdbd;
+  --sea: #c6d4d6;
+  --land: #e1e0d0;
+  --france: #f3f2e6;
+  --dep-line: #b7b49d;
+  --reg-line: #7f8068;
+  --accent: #3d4c2b;
+  --accent-ink: #f4f6ee;
+  --chip: #e4e7da;
+  --halo: rgba(246,247,241,.9);
+  --c-inf: #b8322a; --c-cav: #2c64a8; --c-art: #c47a00; --c-gen: #4b4636;
+  --c-trs: #6b4ea2; --c-trn: #2b7a4b; --c-mat: #5d7385; --c-alat: #0f8d9a;
+  --c-sou: #b8417f; --c-sma: #8a6a12; --c-ia: #8d5a2b;
+  --river: #7fa6c2; --road: #d49a5c; --road2: #cbb894; --city: #6d7363; --city-soft: #8d9283; --city-halo: #f3f2e6;
+  --f-display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #151a18; --panel: #1b211e; --ink: #e6e9df; --ink-soft: #9ba393; --line: #333c36;
+  --sea: #0f1517; --land: #232a26; --france: #2c3530; --dep-line: #46514a; --reg-line: #77836f;
+  --accent: #b9c98f; --accent-ink: #18200f; --chip: #262e29; --halo: rgba(27,33,30,.92);
+  --c-inf: #e5615a; --c-cav: #6aa3e8; --c-art: #e8a23a; --c-gen: #b9b190;
+  --c-trs: #a98ae0; --c-trn: #55b67b; --c-mat: #93a9bb; --c-alat: #3fc3cf;
+  --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62;
+  --river: #3f6f8c; --road: #8f6a42; --road2: #574f40; --city: #a4ab98; --city-soft: #7f8775; --city-halo: #2c3530;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --paper: #151a18; --panel: #1b211e; --ink: #e6e9df; --ink-soft: #9ba393; --line: #333c36;
+  --sea: #0f1517; --land: #232a26; --france: #2c3530; --dep-line: #46514a; --reg-line: #77836f;
+  --accent: #b9c98f; --accent-ink: #18200f; --chip: #262e29; --halo: rgba(27,33,30,.92);
+  --c-inf: #e5615a; --c-cav: #6aa3e8; --c-art: #e8a23a; --c-gen: #b9b190;
+  --c-trs: #a98ae0; --c-trn: #55b67b; --c-mat: #93a9bb; --c-alat: #3fc3cf;
+  --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62;
+  --river: #3f6f8c; --road: #8f6a42; --road2: #574f40; --city: #a4ab98; --city-soft: #7f8775; --city-halo: #2c3530;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 15px; }
+.app { display: grid; grid-template-columns: 360px 1fr; height: 100%; }
+.panel { background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.head { padding: 18px 18px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-height: 1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.count { font-family: var(--f-display); font-size: 17px; font-weight: 600; color: var(--ink-soft); }
+.count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.scroll { overflow-y: auto; min-height: 0; flex: 1; padding: 14px 18px 18px; display: grid; gap: 18px; align-content: start; }
+.group { display: grid; gap: 8px; }
+.group-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.group-h h2 { font-family: var(--f-display); font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+.link { background: none; border: 0; padding: 0; color: var(--ink-soft); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 4px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font: 600 14px/1.1 var(--f-body); cursor: pointer; }
+.chip .n { font-family: var(--f-mono); font-size: 11px; color: var(--ink-soft); font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip[aria-pressed="true"] .n { color: var(--accent-ink); opacity: .8; }
+.chip.tag { padding-left: 10px; }
+.chip:focus-visible, .link:focus-visible, .item:focus-visible, select:focus-visible, input:focus-visible, .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.search { width: 100%; box-sizing: border-box; padding: 9px 11px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); font: 15px var(--f-body); }
+.list { display: grid; gap: 2px; }
+.item { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; padding: 7px 6px; border-radius: 4px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.item:hover { background: var(--chip); }
+.item .t { min-width: 0; }
+.item .ab { font-family: var(--f-display); font-weight: 700; font-size: 16px; }
+.item .nm { font-size: 13px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty { color: var(--ink-soft); font-size: 14px; }
+.note { font-size: 12px; color: var(--ink-soft); line-height: 1.4; border-top: 1px solid var(--line); padding-top: 12px; }
+.mapwrap { position: relative; min-width: 0; }
+#map { position: absolute; inset: 0; background: var(--sea); }
+.goto { position: absolute; top: 12px; right: 12px; z-index: 500; }
+.goto select { padding: 8px 10px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: 600 14px var(--f-body); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+.toggle { display: none; }
+
+/* Carte */
+.leaflet-container { background: var(--sea); font-family: var(--f-body); }
+.leaflet-bar a { background: var(--panel); color: var(--ink); border-bottom-color: var(--line); }
+.leaflet-bar a:hover { background: var(--chip); }
+.leaflet-control-attribution { background: var(--halo) !important; color: var(--ink-soft) !important; font-size: 10px; }
+.leaflet-control-scale-line { background: var(--halo); color: var(--ink); border-color: var(--ink-soft); font-family: var(--f-mono); font-size: 10px; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--ink); box-shadow: 0 3px 14px rgba(0,0,0,.3); }
+.leaflet-popup-content-wrapper { border-radius: 6px; }
+.leaflet-popup-content { margin: 14px 16px; font-size: 14px; line-height: 1.45; min-width: 220px; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--ink-soft); }
+.pop-h { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+.pop-ab { font-family: var(--f-display); font-weight: 700; font-size: 22px; line-height: 1; }
+.pop-nm { font-weight: 600; margin-bottom: 8px; }
+.pop dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; }
+.pop dt { font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); padding-top: 3px; }
+.pop dd { margin: 0; }
+.pop .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.pop .tags span { font-size: 12px; padding: 2px 7px; border-radius: 3px; background: var(--chip); border: 1px solid var(--line); }
+.unit { background: none; border: 0; }
+.unit svg { display: block; filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.35)); transition: transform .12s; }
+.unit:hover svg { transform: scale(1.18); }
+.ulabel { background: var(--ink); border: 0; box-shadow: 0 1px 2px rgba(0,0,0,.25); color: var(--panel); padding: 1px 6px; border-radius: 3px; font: 700 12.5px/1.25 var(--f-display); letter-spacing: .03em; white-space: nowrap; }
+.ulabel::before { display: none; }
+.dlabel { background: none; border: 0; box-shadow: none; color: var(--ink-soft); font: 600 11px var(--f-display); text-transform: uppercase; letter-spacing: .12em; opacity: .75; }
+.dlabel::before { display: none; }
+.clabel { background: none; border: 0; box-shadow: none; color: var(--accent); font: italic 600 12px var(--f-display); letter-spacing: .04em; text-shadow: 0 0 3px var(--paper), 0 0 3px var(--paper); }
+.clabel::before { display: none; }
+#map:not(.z8) .clabel { display: none; }
+#map:not(.z7) .ulabel, #map:not(.z7) .dlabel, #map.z9 .dlabel { display: none; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .mapwrap { grid-row: 1; grid-column: 1; }
+  .panel { grid-row: 1; grid-column: 1; z-index: 800; align-self: end; max-height: 62%; border-right: 0; border-top: 1px solid var(--line); border-radius: 12px 12px 0 0; box-shadow: 0 -4px 18px rgba(0,0,0,.2); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .panel.closed .scroll { display: none; }
+  .head { padding: 10px 16px; grid-template-columns: 1fr auto; align-items: center; }
+  .head .eyebrow { display: none; }
+  h1 { font-size: 22px; }
+  .count { grid-column: 1; }
+  .toggle { display: inline-flex; grid-row: 1 / span 2; grid-column: 2; padding: 8px 12px; border-radius: 4px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font: 600 14px var(--f-body); cursor: pointer; }
+  .scroll { padding: 12px 16px 16px; }
+  .goto { top: 10px; right: 10px; }
+}
+#map:not(.z7) .unit svg { transform: scale(.78); }
+#map:not(.z7) .unit:hover svg { transform: scale(1.05); }
+@media (max-width: 760px) { .leaflet-bottom { margin-bottom: 64px; } }
+@media (prefers-reduced-motion: reduce) { .unit svg { transition: none; } }
+</style>
+
+<div class="app">
+  <aside class="panel" id="panel">
+    <div class="head">
+      <div class="eyebrow">Armée de terre · implantations</div>
+      <h1>Carte des régiments</h1>
+      <div class="count"><b id="nShown">0</b> unités affichées sur <span id="nAll">0</span></div>
+      <button class="toggle" id="toggle" type="button" aria-expanded="false" aria-controls="panel">Filtres</button>
+    </div>
+    <div class="scroll">
+      <div class="group">
+        <div class="group-h"><h2>Arme</h2><button class="link" type="button" data-reset="arme">Tout afficher</button></div>
+        <div class="chips" id="armes"></div>
+      </div>
+      <div class="group">
+        <div class="group-h"><h2>Spécialité</h2><button class="link" type="button" data-reset="tag">Effacer</button></div>
+        <div class="chips" id="tags"></div>
+      </div>
+      <div class="group">
+        <div class="group-h"><h2>Zone</h2><button class="link" type="button" data-reset="zone">Effacer</button></div>
+        <div class="chips" id="zones"></div>
+      </div>
+      <div class="group">
+        <div class="group-h"><h2>Afficher</h2></div>
+        <div class="chips"><button class="chip tag" type="button" id="campsChip" aria-pressed="true">Camps d'entraînement <span class="n">11</span></button></div>
+      </div>
+      <div class="group">
+        <label class="group-h" for="q"><h2>Chercher</h2></label>
+        <input class="search" id="q" type="search" placeholder="Ville, numéro, nom… ex. Pau, 27e, CENZUB" autocomplete="off">
+      </div>
+      <div class="group">
+        <div class="group-h"><h2>Unités</h2></div>
+        <div class="list" id="list"></div>
+      </div>
+      <p class="note">Arme et spécialité se cumulent : « Infanterie » + « Troupes de montagne » donne les bataillons de chasseurs alpins. Sans arme cochée, toutes les armes sont visibles. Depuis le 1er juillet 2025, les centres portent le nom de leur régiment : le CENZUB est devenu le 94e RI, le CAPCIA le 51e RI, le CENTAC le 1er BCP, le CNEC le 1er régiment de choc. L'ancien sigle reste cherchable. Garnisons publiques, placées à l'échelle de la ville, d'après des sources ouvertes à jour en 2026. Une erreur reste possible.</p>
+    </div>
+  </aside>
+  <div class="mapwrap">
+    <div id="map" aria-label="Carte des régiments"></div>
+    <div class="goto">
+      <label for="goto" hidden>Aller à</label>
+      <select id="goto">
+        <option value="metro">Métropole</option>
+        <option value="antilles">Antilles</option>
+        <option value="guyane">Guyane</option>
+        <option value="oi">Réunion et Mayotte</option>
+        <option value="nc">Nouvelle-Calédonie</option>
+        <option value="pf">Polynésie</option>
+        <option value="djib">Djibouti</option>
+        <option value="eau">Émirats arabes unis</option>
+        <option value="monde">Monde entier</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+// Polices Google ajoutées après coup : si le réseau ne répond pas (mode avion), rien n'attend.
+(() => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap"; document.head.appendChild(l); })();
+const WORLD = /*__WORLD__*/null;
+const DEPS = /*__DEPS__*/null;
+const REGS = /*__REGS__*/null;
+const RIVERS = /*__RIVERS__*/null;
+const ROADS = /*__ROADS__*/null;
+const LAKES = /*__LAKES__*/null;
+const CITY_RAW = /*__CITIES__*/null;
+const ZONE_GEO = /*__ZONES__*/null;
+
+// Armes : couleur (token CSS) + glyphe dessiné dans le cadre d'unité, façon symbole OTAN.
+const ARMES = {
+  inf:  { label: "Infanterie" },
+  cav:  { label: "Cavalerie (blindés)" },
+  art:  { label: "Artillerie" },
+  gen:  { label: "Génie" },
+  trs:  { label: "Transmissions" },
+  trn:  { label: "Train" },
+  mat:  { label: "Matériel" },
+  alat: { label: "Aviation légère (ALAT)" },
+  sou:  { label: "Santé et logistique" },
+  sma:  { label: "Service militaire adapté et volontaire" },
+  ia:   { label: "Écoles interarmes" }
+};
+const TAGS = {
+  montagne: "Troupes de montagne",
+  para: "Parachutistes",
+  legion: "Légion étrangère",
+  marine: "Troupes de marine",
+  fs: "Forces spéciales",
+  centre: "Centres d'entraînement",
+  ecole: "Écoles et instruction",
+  cfim: "Formation des recrues (ex-CFIM)",
+  rens: "Renseignement",
+  cyber: "Cyber et guerre électronique",
+  nrbc: "NRBC",
+  secours: "Sécurité civile et pompiers",
+  reserve: "Réserve",
+  site: "Bases et détachements",
+  musique: "Musiques militaires",
+  lycee: "Lycées militaires"
+};
+const ZONES = { metro: "Métropole", om: "Outre-mer", etr: "Étranger" };
+
+// [sigle, nom complet, arme, spécialités, ville, département/territoire, lat, lon, rattachement, rôle, zone]
+const U = [
+ ["1er RI","1er régiment d'infanterie","inf",[],"Sarrebourg","Moselle",48.734,7.054,"Brigade franco-allemande","Infanterie motorisée"],
+ ["1er RTir","1er régiment de tirailleurs","inf",[],"Épinal","Vosges",48.174,6.449,"7e brigade blindée","Infanterie mécanisée (VBCI)"],
+ ["35e RI","35e régiment d'infanterie","inf",[],"Belfort","Territoire de Belfort",47.638,6.862,"7e brigade blindée","Infanterie mécanisée (VBCI)"],
+ ["152e RI","152e régiment d'infanterie","inf",[],"Colmar","Haut-Rhin",48.079,7.357,"7e brigade blindée","Infanterie mécanisée (VBCI), « les Diables rouges »"],
+ ["92e RI","92e régiment d'infanterie","inf",[],"Clermont-Ferrand","Puy-de-Dôme",45.777,3.087,"2e brigade blindée","Infanterie mécanisée (VBCI)"],
+ ["16e BC","16e bataillon de chasseurs à pied","inf",[],"Bitche","Moselle",49.052,7.43,"2e brigade blindée","Infanterie mécanisée (VBCI)"],
+ ["RMT","Régiment de marche du Tchad","inf",["marine"],"Meyenheim","Haut-Rhin",47.913,7.385,"2e brigade blindée","Infanterie mécanisée (VBCI), héritier de la 2e DB"],
+ ["126e RI","126e régiment d'infanterie","inf",[],"Brive-la-Gaillarde","Corrèze",45.159,1.532,"9e brigade d'infanterie de marine","Infanterie motorisée (Griffon)"],
+ ["2e RIMa","2e régiment d'infanterie de marine","inf",["marine"],"Champagné","Sarthe",48.022,0.331,"9e brigade d'infanterie de marine","Infanterie motorisée (Griffon)"],
+ ["3e RIMa","3e régiment d'infanterie de marine","inf",["marine"],"Vannes","Morbihan",47.658,-2.76,"9e brigade d'infanterie de marine","Infanterie motorisée (Griffon)"],
+ ["21e RIMa","21e régiment d'infanterie de marine","inf",["marine"],"Fréjus","Var",43.433,6.737,"6e brigade légère blindée","Infanterie motorisée"],
+ ["2e REI","2e régiment étranger d'infanterie","inf",["legion"],"Nîmes","Gard",43.836,4.36,"6e brigade légère blindée","Infanterie mécanisée de la Légion"],
+ ["13e DBLE","13e demi-brigade de Légion étrangère","inf",["legion"],"La Cavalerie (Larzac)","Aveyron",44.009,3.157,"6e brigade légère blindée","Infanterie motorisée de la Légion"],
+ ["7e BCA","7e bataillon de chasseurs alpins","inf",["montagne"],"Varces","Isère",45.093,5.682,"27e brigade d'infanterie de montagne","Chasseurs alpins"],
+ ["13e BCA","13e bataillon de chasseurs alpins","inf",["montagne"],"Barby (Chambéry)","Savoie",45.567,5.95,"27e brigade d'infanterie de montagne","Chasseurs alpins"],
+ ["27e BCA","27e bataillon de chasseurs alpins","inf",["montagne"],"Cran-Gevrier (Annecy)","Haute-Savoie",45.9,6.104,"27e brigade d'infanterie de montagne","Chasseurs alpins"],
+ ["1er RCP","1er régiment de chasseurs parachutistes","inf",["para"],"Pamiers","Ariège",43.116,1.611,"11e brigade parachutiste","Infanterie parachutiste"],
+ ["3e RPIMa","3e régiment de parachutistes d'infanterie de marine","inf",["para","marine"],"Carcassonne","Aude",43.212,2.353,"11e brigade parachutiste","Infanterie parachutiste"],
+ ["8e RPIMa","8e régiment de parachutistes d'infanterie de marine","inf",["para","marine"],"Castres","Tarn",43.606,2.241,"11e brigade parachutiste","Infanterie parachutiste"],
+ ["2e REP","2e régiment étranger de parachutistes","inf",["para","legion"],"Calvi","Haute-Corse",42.566,8.757,"11e brigade parachutiste","Seul régiment parachutiste de la Légion"],
+ ["1er RPIMa","1er régiment de parachutistes d'infanterie de marine","inf",["fs","para","marine"],"Bayonne","Pyrénées-Atlantiques",43.493,-1.475,"Commandement des forces spéciales Terre","Forces spéciales"],
+ ["1er RE","1er régiment étranger","inf",["legion"],"Aubagne","Bouches-du-Rhône",43.292,5.57,"Commandement de la Légion étrangère","Maison mère de la Légion"],
+ ["4e RE","4e régiment étranger","inf",["legion"],"Castelnaudary","Aude",43.318,1.954,"Commandement de la Légion étrangère","Formation des légionnaires"],
+ ["24e RI","24e régiment d'infanterie","inf",["reserve"],"Vincennes","Val-de-Marne",48.843,2.436,"Commandement de la logistique","Régiment de réservistes d'Île-de-France"],
+ ["3e REI","3e régiment étranger d'infanterie","inf",["legion"],"Kourou","Guyane",5.159,-52.649,"Forces armées en Guyane","Protection du centre spatial, combat en forêt","om"],
+ ["9e RIMa","9e régiment d'infanterie de marine","inf",["marine"],"Cayenne","Guyane",4.938,-52.326,"Forces armées en Guyane","Lutte contre l'orpaillage illégal","om"],
+ ["33e RIMa","33e régiment d'infanterie de marine","inf",["marine"],"Fort-de-France","Martinique",14.607,-61.07,"Forces armées aux Antilles","Infanterie","om"],
+ ["2e RPIMa","2e régiment de parachutistes d'infanterie de marine","inf",["para","marine"],"Saint-Pierre","La Réunion",-21.34,55.478,"Forces armées dans la zone sud de l'océan Indien","Infanterie parachutiste","om"],
+ ["5e RE","5e régiment étranger","inf",["legion"],"Dzaoudzi (Labattoir)","Mayotte",-12.787,45.282,"Forces armées dans la zone sud de l'océan Indien","Ex-détachement de Légion étrangère de Mayotte (DLEM), devenu régiment en juin 2024","om"],
+ ["RIMaP-NC","Régiment d'infanterie de marine du Pacifique – Nouvelle-Calédonie","inf",["marine"],"Nouméa","Nouvelle-Calédonie",-22.27,166.44,"Forces armées de Nouvelle-Calédonie","Infanterie","om"],
+ ["RIMaP-P","Régiment d'infanterie de marine du Pacifique – Polynésie","inf",["marine"],"Arue (Tahiti)","Polynésie française",-17.52,-149.53,"Forces armées en Polynésie française","Infanterie","om"],
+ ["5e RIAOM","5e régiment interarmes d'outre-mer","inf",["marine"],"Djibouti","Djibouti",11.574,43.15,"Forces françaises stationnées à Djibouti","Régiment interarmes : infanterie, blindés, artillerie, génie","etr"],
+
+ ["1er RCh","1er régiment de chasseurs","cav",[],"Thierville-sur-Meuse","Meuse",49.165,5.36,"7e brigade blindée","Chars Leclerc"],
+ ["5e RD","5e régiment de dragons","cav",[],"Mailly-le-Camp","Aube",48.67,4.21,"7e brigade blindée","Régiment interarmes (Leclerc, VBCI, génie)"],
+ ["12e RC","12e régiment de cuirassiers","cav",[],"Olivet","Loiret",47.862,1.9,"2e brigade blindée","Chars Leclerc"],
+ ["501e RCC","501e régiment de chars de combat","cav",[],"Mourmelon-le-Grand","Marne",49.133,4.363,"2e brigade blindée","Chars Leclerc"],
+ ["3e RH","3e régiment de hussards","cav",[],"Metz","Moselle",49.12,6.177,"Brigade franco-allemande","Blindés à roues (Jaguar)"],
+ ["1er RS","1er régiment de spahis","cav",[],"Valence","Drôme",44.933,4.892,"6e brigade légère blindée","Blindés à roues (Jaguar)"],
+ ["1er REC","1er régiment étranger de cavalerie","cav",["legion"],"Carpiagne","Bouches-du-Rhône",43.248,5.5,"6e brigade légère blindée","Blindés à roues (Jaguar)"],
+ ["4e RCh","4e régiment de chasseurs","cav",["montagne"],"Gap","Hautes-Alpes",44.56,6.079,"27e brigade d'infanterie de montagne","Cavalerie de montagne"],
+ ["1er RHP","1er régiment de hussards parachutistes","cav",["para"],"Tarbes","Hautes-Pyrénées",43.233,0.078,"11e brigade parachutiste","Cavalerie parachutiste"],
+ ["RICM","Régiment d'infanterie-chars de marine","cav",["marine"],"Poitiers","Vienne",46.58,0.34,"9e brigade d'infanterie de marine","Blindés à roues (Jaguar)"],
+ ["1er RIMa","1er régiment d'infanterie de marine","cav",["marine"],"Angoulême","Charente",45.648,0.156,"9e brigade d'infanterie de marine","Blindés à roues (Jaguar)"],
+ ["2e RH","2e régiment de hussards","cav",["rens"],"Haguenau","Bas-Rhin",48.816,7.79,"Brigade de renseignement et cyber-électronique","Recherche humaine du renseignement"],
+ ["13e RDP","13e régiment de dragons parachutistes","cav",["fs","para","rens"],"Martignas-sur-Jalle","Gironde",44.84,-0.78,"Commandement des forces spéciales Terre","Forces spéciales, renseignement en profondeur"],
+ ["2e RD","2e régiment de dragons","cav",["nrbc"],"Fontevraud-l'Abbaye","Maine-et-Loire",47.18,0.05,"Brigade du génie","Défense nucléaire, radiologique, biologique et chimique"],
+ ["132e RIC","132e régiment d'infanterie cynotechnique","inf",[],"Suippes","Marne",49.13,4.53,"Brigade du génie","Combat avec chiens : environ 600 soldats et 500 chiens"],
+ ["1er RCA","1er régiment de chasseurs d'Afrique","cav",["centre"],"Montferrat (camp de Canjuers)","Var",43.616,6.483,"Commandement de l'entraînement au combat interarmes","Centre d'entraînement : formation des tireurs, pilotes et chefs d'engins blindés, gestion du camp de Canjuers"],
+ ["5e RC","5e régiment de cuirassiers","cav",[],"Zayed Military City (Abou Dhabi)","Émirats arabes unis",24.05,54.85,"Forces françaises aux Émirats arabes unis","Groupement interarmes : Leclerc, VBCI, CAESAR","etr"],
+
+ ["1er RA","1er régiment d'artillerie","art",[],"Bourogne","Territoire de Belfort",47.565,6.92,"19e brigade d'artillerie","Feux longue portée et contre-batterie"],
+ ["54e RA","54e régiment d'artillerie","art",[],"Hyères","Var",43.12,6.13,"19e brigade d'artillerie","Défense sol-air"],
+ ["61e RA","61e régiment d'artillerie","art",["rens"],"Chaumont","Haute-Marne",48.111,5.14,"19e brigade d'artillerie","Drones tactiques"],
+ ["40e RA","40e régiment d'artillerie","art",[],"Suippes","Marne",49.13,4.53,"2e brigade blindée","Canons CAESAR"],
+ ["68e RAA","68e régiment d'artillerie d'Afrique","art",[],"La Valbonne","Ain",45.85,5.13,"7e brigade blindée","Canons CAESAR"],
+ ["3e RAMa","3e régiment d'artillerie de marine","art",["marine"],"Canjuers","Var",43.65,6.46,"6e brigade légère blindée","Canons CAESAR"],
+ ["11e RAMa","11e régiment d'artillerie de marine","art",["marine"],"Saint-Aubin-du-Cormier","Ille-et-Vilaine",48.26,-1.4,"9e brigade d'infanterie de marine","Canons CAESAR"],
+ ["35e RAP","35e régiment d'artillerie parachutiste","art",["para"],"Tarbes","Hautes-Pyrénées",43.233,0.078,"11e brigade parachutiste","Artillerie parachutiste"],
+ ["93e RAM","93e régiment d'artillerie de montagne","art",["montagne"],"Varces","Isère",45.093,5.682,"27e brigade d'infanterie de montagne","Artillerie de montagne"],
+ ["28e RAG","28e régiment d'artillerie géographique","art",[],"Haguenau","Bas-Rhin",48.816,7.79,"Brigade du génie","Cartographie et géographie militaire (ex-28e groupe géographique, renommé en juin 2026)"],
+
+ ["1er REG","1er régiment étranger de génie","gen",["legion"],"Laudun-l'Ardoise","Gard",44.1,4.66,"6e brigade légère blindée","Génie de combat de la Légion"],
+ ["2e REG","2e régiment étranger de génie","gen",["legion","montagne"],"Saint-Christol","Vaucluse",44.03,5.49,"27e brigade d'infanterie de montagne","Génie de montagne de la Légion"],
+ ["3e RG","3e régiment du génie","gen",[],"Charleville-Mézières","Ardennes",49.77,4.72,"7e brigade blindée","Génie de combat"],
+ ["13e RG","13e régiment du génie","gen",[],"Valdahon","Doubs",47.15,6.35,"2e brigade blindée","Génie de combat"],
+ ["6e RG","6e régiment du génie","gen",[],"Angers","Maine-et-Loire",47.47,-0.55,"9e brigade d'infanterie de marine","Génie de combat"],
+ ["17e RGP","17e régiment du génie parachutiste","gen",["para"],"Montauban","Tarn-et-Garonne",44.02,1.35,"11e brigade parachutiste","Génie parachutiste"],
+ ["19e RG","19e régiment du génie","gen",[],"Besançon","Doubs",47.24,6.02,"Brigade du génie","Franchissement et appui au déploiement"],
+ ["31e RG","31e régiment du génie","gen",[],"Castelsarrasin","Tarn-et-Garonne",44.04,1.11,"3e division","Génie d'appui divisionnaire"],
+ ["BSPP","Brigade de sapeurs-pompiers de Paris","gen",["secours"],"Paris","Paris",48.886,2.31,"Sous l'autorité du préfet de police","Secours et lutte contre l'incendie à Paris et en petite couronne"],
+ ["1er RIISC","1er régiment d'instruction et d'intervention de la sécurité civile","gen",["secours"],"Nogent-le-Rotrou","Eure-et-Loir",48.32,0.82,"Sécurité civile (ministère de l'Intérieur)","Catastrophes naturelles, feux de forêt"],
+ ["5e RIISC","5e régiment d'instruction et d'intervention de la sécurité civile","gen",["secours"],"Corte","Haute-Corse",42.31,9.15,"Sécurité civile (ministère de l'Intérieur)","Catastrophes naturelles, feux de forêt"],
+ ["7e RIISC","7e régiment d'instruction et d'intervention de la sécurité civile","gen",["secours"],"Brignoles","Var",43.405,6.06,"Sécurité civile (ministère de l'Intérieur)","Catastrophes naturelles, feux de forêt"],
+
+ ["8e RT","8e régiment de transmissions","trs",[],"Suresnes (Mont-Valérien)","Hauts-de-Seine",48.872,2.212,"Commissariat au numérique de défense","Réseaux et systèmes d'information du ministère, 24 h sur 24"],
+ ["28e RT","28e régiment de transmissions","trs",[],"Issoire","Puy-de-Dôme",45.545,3.25,"Commandement de l'appui terrestre numérique et cyber","Réseaux de commandement"],
+ ["40e RT","40e régiment de transmissions","trs",[],"Thionville","Moselle",49.358,6.168,"Commandement de l'appui terrestre numérique et cyber","Réseaux de commandement"],
+ ["41e RT","41e régiment de transmissions","trs",[],"Douai","Nord",50.37,3.08,"Commandement de l'appui terrestre numérique et cyber","Réseaux de commandement"],
+ ["48e RT","48e régiment de transmissions","trs",[],"Agen","Lot-et-Garonne",44.203,0.616,"Commandement de l'appui terrestre numérique et cyber","Réseaux de commandement"],
+ ["53e RT","53e régiment de transmissions","trs",[],"Lunéville","Meurthe-et-Moselle",48.592,6.497,"Commandement de l'appui terrestre numérique et cyber","Réseaux de commandement"],
+ ["44e RT","44e régiment de transmissions","trs",["rens","cyber"],"Mutzig","Bas-Rhin",48.54,7.455,"Brigade de renseignement et cyber-électronique","Guerre électronique"],
+ ["54e RT","54e régiment de transmissions","trs",["rens","cyber"],"Haguenau","Bas-Rhin",48.816,7.79,"Brigade de renseignement et cyber-électronique","Guerre électronique"],
+ ["RCyber","Régiment de cyberdéfense","trs",["cyber"],"Saint-Jacques-de-la-Lande","Ille-et-Vilaine",48.09,-1.72,"Commandement de l'appui terrestre numérique et cyber","Cyberdéfense, créé en 2025"],
+ ["785e CGE","785e compagnie de guerre électronique","trs",["rens","cyber"],"Saint-Jacques-de-la-Lande","Ille-et-Vilaine",48.09,-1.72,"Brigade de renseignement et cyber-électronique","Guerre électronique (compagnie, pas un régiment)"],
+
+ ["121e RT","121e régiment du train","trn",[],"Montlhéry","Essonne",48.64,2.27,"Brigade logistique","Transport et ravitaillement"],
+ ["503e RT","503e régiment du train","trn",[],"Saint-Gilles","Gard",43.678,4.432,"Brigade logistique","Transport et ravitaillement"],
+ ["511e RT","511e régiment du train","trn",[],"Auxonne","Côte-d'Or",47.193,5.388,"Brigade logistique","Transport et ravitaillement"],
+ ["515e RT","515e régiment du train","trn",[],"La Braconne","Charente",45.68,0.29,"Brigade logistique","Transport et ravitaillement"],
+ ["516e RT","516e régiment du train","trn",[],"Toul","Meurthe-et-Moselle",48.68,5.89,"Brigade logistique","Transport et ravitaillement"],
+ ["519e RT","519e régiment du train","trn",[],"Ollioules","Var",43.14,5.85,"Brigade logistique","Transit maritime : capacité portuaire pour entrer sur un théâtre par la mer"],
+ ["1er RTP","1er régiment du train parachutiste","trn",["para"],"Toulouse","Haute-Garonne",43.603,1.444,"11e brigade parachutiste","Livraison par air"],
+
+ ["2e RMAT","2e régiment du matériel","mat",[],"Bruz","Ille-et-Vilaine",48.03,-1.75,"Brigade de maintenance","Maintenance des véhicules et armements"],
+ ["3e RMAT","3e régiment du matériel","mat",[],"Muret","Haute-Garonne",43.46,1.33,"Brigade de maintenance","Maintenance des véhicules et armements"],
+ ["4e RMAT","4e régiment du matériel","mat",[],"Nîmes","Gard",43.836,4.36,"Brigade de maintenance","Maintenance des véhicules et armements"],
+ ["6e RMAT","6e régiment du matériel","mat",[],"Besançon","Doubs",47.24,6.02,"Brigade de maintenance","Maintenance des véhicules et armements"],
+ ["7e RMAT","7e régiment du matériel","mat",[],"Lyon","Rhône",45.74,4.84,"Brigade de maintenance","Maintenance des véhicules et armements"],
+ ["8e RMAT","8e régiment du matériel","mat",[],"Mourmelon-le-Grand","Marne",49.133,4.363,"Brigade de maintenance","Maintenance des véhicules et armements"],
+
+ ["1er RHC","1er régiment d'hélicoptères de combat","alat",[],"Phalsbourg","Moselle",48.77,7.26,"4e brigade d'aérocombat","Hélicoptères Tigre, Gazelle, Caïman"],
+ ["3e RHC","3e régiment d'hélicoptères de combat","alat",[],"Étain","Meuse",49.21,5.64,"4e brigade d'aérocombat","Hélicoptères, spécialiste du vol de nuit"],
+ ["5e RHC","5e régiment d'hélicoptères de combat","alat",[],"Pau","Pyrénées-Atlantiques",43.38,-0.42,"4e brigade d'aérocombat","Hélicoptères de combat"],
+ ["9e RSAM","9e régiment de soutien aéromobile","alat",[],"Montauban","Tarn-et-Garonne",44.02,1.35,"4e brigade d'aérocombat","Maintenance des hélicoptères"],
+ ["4e RHFS","4e régiment d'hélicoptères des forces spéciales","alat",["fs"],"Pau","Pyrénées-Atlantiques",43.38,-0.42,"Commandement des forces spéciales Terre","Hélicoptères des forces spéciales"],
+
+ ["RMED","Régiment médical","sou",[],"La Valbonne","Ain",45.85,5.13,"Brigade logistique","Déploiement des hôpitaux de campagne"],
+ ["14e RISLP","14e régiment d'infanterie et de soutien logistique parachutiste","sou",["para"],"Toulouse","Haute-Garonne",43.603,1.444,"Brigade logistique","Soutien logistique des troupes aéroportées, évacuation des ressortissants"],
+
+ ["1er BCP","1er bataillon de chasseurs à pied","inf",["centre"],"Mailly-le-Camp","Aube",48.67,4.21,"Commandement de l'entraînement au combat interarmes","Entraînement au combat de haute intensité en terrain libre (ex-CENTAC)"],
+ ["94e RI","94e régiment d'infanterie","inf",["centre"],"Sissonne","Aisne",49.571,3.894,"Commandement de l'entraînement au combat interarmes","Entraînement au combat en zone urbaine (ex-CENZUB)"],
+ ["51e RI","51e régiment d'infanterie","inf",["centre"],"Mourmelon-le-Grand","Marne",49.133,4.363,"Commandement de l'entraînement au combat interarmes","Appui et préparation au combat interarmes, camps de Mourmelon, Suippes et Moronvilliers (ex-CAPCIA, ex-CENTIAL)"],
+ ["1er CHOC","1er régiment de choc","inf",["centre"],"Mont-Louis","Pyrénées-Orientales",42.51,2.12,"Commandement de l'entraînement au combat interarmes","Entraînement commando, sites de Mont-Louis et Collioure (ex-CNEC)"],
+ ["122e RI","122e régiment d'infanterie","inf",["centre"],"La Cavalerie (Larzac)","Aveyron",44.009,3.157,"Commandement de l'entraînement au combat interarmes","Entraînement de l'infanterie au tir opérationnel (ex-CEITO)"],
+ ["3e RA","3e régiment d'artillerie","art",["centre"],"Mailly-le-Camp","Aube",48.67,4.21,"Commandement de l'entraînement au combat interarmes","Entraînement des postes de commandement (ex-CEPC)"],
+ ["17e GA","17e groupe d'artillerie","art",["centre"],"Biscarrosse","Landes",44.39,-1.16,"Commandement de l'entraînement au combat interarmes","Évaluation et entraînement à la lutte sol-air (nom d'après sengager.fr ; parfois appelé 17e RA depuis 2025)"],
+ ["GAM","Groupement d'aguerrissement montagne","inf",["centre","montagne"],"Modane","Savoie",45.2,6.67,"École militaire de haute montagne","Aguerrissement en montagne et par grand froid"],
+ ["CEFE","Centre d'entraînement en forêt équatoriale","inf",["centre","legion"],"Régina","Guyane",4.31,-52.13,"3e régiment étranger d'infanterie","Aguerrissement en jungle","om"],
+ ["CECAD","Centre d'entraînement au combat et d'aguerrissement de Djibouti","inf",["centre","marine"],"Arta","Djibouti",11.52,42.84,"5e régiment interarmes d'outre-mer","Aguerrissement en milieu désertique","etr"],
+
+ ["4e GITdM","4e groupement d'instruction des troupes de marine","inf",["cfim","marine"],"Fréjus","Var",43.433,6.737,"6e brigade légère blindée","Formation initiale des soldats (ex-CFIM-4e RIMa)"],
+ ["22e GITdM","22e groupement d'instruction des troupes de marine","inf",["cfim","marine"],"Angoulême","Charente",45.648,0.156,"9e brigade d'infanterie de marine","Formation initiale des soldats (ex-CFIM-22e RIMa)"],
+ ["151e GI","151e groupement d'instruction","inf",["cfim"],"Verdun","Meuse",49.16,5.385,"Brigade de renseignement et cyber-électronique","Formation initiale des soldats (ex-CFIM-151e RI)"],
+ ["11e RPIE","11e régiment parachutiste d'instruction et d'entraînement","inf",["cfim","para"],"Caylus","Tarn-et-Garonne",44.236,1.772,"11e brigade parachutiste","Formation initiale des parachutistes (ex-CFIM-6e RPIMa)"],
+ ["6e GIM","6e groupement d'instruction de montagne","inf",["cfim","montagne"],"Gap","Hautes-Alpes",44.56,6.079,"27e brigade d'infanterie de montagne","Formation initiale des soldats de montagne (ex-CFIM-6e BCA)"],
+ ["18e RIT","18e régiment d'instruction des transmissions","trs",["cfim"],"Dieuze","Moselle",48.81,6.72,"","Formation initiale des soldats des transmissions (ex-CFIM-18e RT)"],
+ ["1er GITdM","1er groupement d'instruction des troupes de marine","inf",["cfim","marine"],"Coëtquidan (Guer)","Morbihan",47.94,-2.13,"9e brigade d'infanterie de marine","Formation initiale des soldats (ex-CFIM de Coëtquidan)"],
+ ["7e GIB","7e groupement d'instruction blindé","cav",["cfim"],"Valdahon","Doubs",47.15,6.35,"7e brigade blindée","Formation initiale des soldats (ex-CFIM de Valdahon)"],
+ ["12e GI","12e groupement d'instruction","inf",["cfim"],"Bitche","Moselle",49.052,7.43,"2e brigade blindée","Formation initiale des soldats (ex-CFIM de Bitche)"],
+ ["15e GIL","15e groupement d'instruction logistique","trn",["cfim"],"Montlhéry","Essonne",48.64,2.27,"Brigade logistique","Formation initiale des soldats de la logistique (ex-CFIM de Montlhéry)"],
+ ["1er GI BMAINT","1er groupement d'instruction de la brigade de maintenance","mat",["cfim"],"Nîmes (camp des Garrigues)","Gard",43.89,4.4,"Brigade de maintenance","Formation initiale des soldats de la maintenance (ex-CFIM des Garrigues ; nom à confirmer)"],
+ ["EMHM","École militaire de haute montagne","inf",["ecole","montagne"],"Chamonix-Mont-Blanc","Haute-Savoie",45.924,6.87,"27e brigade d'infanterie de montagne","Formation des cadres montagne : alpinisme, ski, secours"],
+ ["ESCC","Écoles de Saint-Cyr Coëtquidan","ia",["ecole"],"Guer","Morbihan",47.94,-2.13,"","Formation des officiers"],
+ ["ENSOA","École nationale des sous-officiers d'active","ia",["ecole"],"Saint-Maixent-l'École","Deux-Sèvres",46.413,-0.207,"","Formation des sous-officiers"],
+ ["ETAP","École des troupes aéroportées","ia",["ecole","para"],"Pau","Pyrénées-Atlantiques",43.33,-0.37,"11e brigade parachutiste","Brevet parachutiste et formation aéroportée"],
+ ["EMD","Écoles militaires de Draguignan","ia",["ecole"],"Draguignan","Var",43.537,6.465,"","Écoles de l'infanterie et de l'artillerie"],
+ ["EMB","Écoles militaires de Bourges","ia",["ecole"],"Bourges","Cher",47.08,2.4,"","École du train et de la logistique opérationnelle, école du matériel, école militaire préparatoire technique"],
+ ["EC","École de cavalerie","cav",["ecole"],"Saumur","Maine-et-Loire",47.26,-0.08,"Écoles militaires de Saumur","Formation des cadres de l'arme blindée cavalerie"],
+ ["ERAT","École du renseignement de l'armée de Terre","ia",["ecole","rens"],"Saumur","Maine-et-Loire",47.26,-0.08,"Écoles militaires de Saumur","Formation au renseignement (ex-CEERAT)"],
+ ["CIA NRBC","Centre interarmées de défense NRBC","ia",["ecole","nrbc"],"Saumur","Maine-et-Loire",47.26,-0.08,"Écoles militaires de Saumur","Formation à la défense nucléaire, radiologique, biologique et chimique"],
+ ["EEM","École d'état-major","ia",["ecole"],"Saumur","Maine-et-Loire",47.26,-0.08,"Écoles militaires de Saumur","Formation des officiers d'état-major"],
+ ["EG","École du génie","gen",["ecole"],"Angers","Maine-et-Loire",47.47,-0.55,"","Formation des cadres du génie"],
+ ["ETNC","École des transmissions, du numérique et du cyber","trs",["ecole","cyber"],"Cesson-Sévigné","Ille-et-Vilaine",48.12,-1.6,"","Formation aux systèmes numériques, à la cyberdéfense et à la guerre électronique (ex-ETRS)"],
+ ["EALAT","École de l'aviation légère de l'armée de Terre","alat",["ecole"],"Le Cannet-des-Maures","Var",43.39,6.34,"","État-major et base école Général Lejay : formation tactique des pilotes et mécaniciens"],
+ ["EALAT Dax","École de l'aviation légère de l'armée de Terre – base de Dax","alat",["ecole"],"Dax","Landes",43.69,-1.06,"","Base école Général Navelet : formation initiale des pilotes d'hélicoptère"],
+
+ ["RSMA-Ga","Régiment du service militaire adapté de Guadeloupe","sma",[],"Baie-Mahault","Guadeloupe",16.267,-61.587,"Commandement du service militaire adapté","Formation professionnelle des jeunes","om"],
+ ["RSMA-M","Régiment du service militaire adapté de Martinique","sma",[],"Le Lamentin","Martinique",14.61,-60.99,"Commandement du service militaire adapté","Formation professionnelle des jeunes","om"],
+ ["RSMA-Gy","Régiment du service militaire adapté de Guyane","sma",[],"Saint-Jean-du-Maroni","Guyane",5.38,-54.07,"Commandement du service militaire adapté","Formation professionnelle des jeunes","om"],
+ ["RSMA-R","Régiment du service militaire adapté de La Réunion","sma",[],"Saint-Denis","La Réunion",-20.88,55.45,"Commandement du service militaire adapté","Formation professionnelle des jeunes","om"],
+ ["RSMA-Ma","Régiment du service militaire adapté de Mayotte","sma",[],"Combani","Mayotte",-12.78,45.15,"Commandement du service militaire adapté","Formation professionnelle des jeunes","om"],
+ ["RSMA-NC","Régiment du service militaire adapté de Nouvelle-Calédonie","sma",[],"Koumac","Nouvelle-Calédonie",-20.56,164.28,"Commandement du service militaire adapté","Formation professionnelle des jeunes","om"],
+ ["RSMA-Pf","Régiment du service militaire adapté de Polynésie française","sma",[],"Arue","Polynésie française",-17.52,-149.53,"Commandement du service militaire adapté","Formation professionnelle des jeunes","om"],
+ ["1er RSMV","1er régiment du service militaire volontaire","sma",[],"Montigny-lès-Metz","Moselle",49.1,6.15,"Service militaire volontaire","Insertion professionnelle des jeunes (antenne à Châlons-en-Champagne)"],
+ ["2e RSMV","2e régiment du service militaire volontaire","sma",[],"Brétigny-sur-Orge","Essonne",48.61,2.31,"Service militaire volontaire","Insertion professionnelle des jeunes"],
+ ["3e RSMV","3e régiment du service militaire volontaire","sma",[],"La Rochelle","Charente-Maritime",46.16,-1.15,"Service militaire volontaire","Insertion professionnelle des jeunes"],
+ ["DSMA","Détachement du service militaire adapté","sma",["ecole"],"Périgueux (quartier Daumesnil)","Dordogne",45.19,0.72,"Commandement du service militaire adapté","Seule unité du SMA en métropole : formation des cadres et des formateurs envoyés outre-mer, accueil de stagiaires ultramarins"],
+ ["12e BSMAT","12e base de soutien du matériel","mat",["site"],"Neuvy-Pailloux","Indre",46.88,1.86,"Service de la maintenance industrielle terrestre","Portion centrale : rénovation industrielle des véhicules"],
+ ["12e BSMAT (dét.)","12e base de soutien du matériel – détachement de Gien","mat",["site"],"Gien","Loiret",47.69,2.63,"Service de la maintenance industrielle terrestre","Maintenance industrielle"],
+ ["12e BSMAT (dét.)","12e base de soutien du matériel – détachement de Douai","mat",["site"],"Douai","Nord",50.37,3.08,"Service de la maintenance industrielle terrestre","Maintenance industrielle"],
+ ["12e BSMAT (dét.)","12e base de soutien du matériel – détachement du Mans","mat",["site"],"Le Mans","Sarthe",48.0,0.2,"Service de la maintenance industrielle terrestre","Maintenance industrielle (site cité par la fiche officielle la plus récente)"],
+ ["13e BSMAT","13e base de soutien du matériel","mat",["site"],"Clermont-Ferrand","Puy-de-Dôme",45.78,3.09,"Service de la maintenance industrielle terrestre","Portion centrale : régénération des VBL et petits véhicules protégés"],
+ ["13e BSMAT (dét.)","13e base de soutien du matériel – détachement de Moulins","mat",["site"],"Moulins","Allier",46.57,3.33,"Service de la maintenance industrielle terrestre","Stockage des pièces de rechange"],
+ ["13e BSMAT (dét.)","13e base de soutien du matériel – détachement de Tulle","mat",["site"],"Tulle","Corrèze",45.27,1.77,"Service de la maintenance industrielle terrestre","Maintenance industrielle"],
+ ["13e BSMAT (dét.)","13e base de soutien du matériel – détachement de Saint-Astier","mat",["site"],"Saint-Astier","Dordogne",45.15,0.53,"Service de la maintenance industrielle terrestre","Stockage longue durée des véhicules complets de l'armée de Terre"],
+ ["14e BSMAT","14e base de soutien du matériel","mat",["site"],"Nouâtre","Indre-et-Loire",47.05,0.55,"Service de la maintenance industrielle terrestre","Portion centrale : maintenance des systèmes de télécommunication"],
+ ["14e BSMAT (dét.)","14e base de soutien du matériel – détachement de Bruz","mat",["site"],"Bruz","Ille-et-Vilaine",48.03,-1.75,"Service de la maintenance industrielle terrestre","Optique, optronique, détection électromagnétique et hydraulique"],
+ ["14e BSMAT (dét.)","14e base de soutien du matériel – détachement de Poitiers","mat",["site"],"Poitiers","Vienne",46.58,0.34,"Service de la maintenance industrielle terrestre","Maintenance de l'armement individuel et collectif"],
+ ["2e RMAT (dét.)","Détachement du 2e régiment du matériel","mat",["site"],"Saint-Jacques-de-la-Lande","Ille-et-Vilaine",48.09,-1.72,"Détachement du 2e régiment du matériel","Maintenance au plus près des unités"],
+ ["2e RMAT (dét.)","Détachement du 2e régiment du matériel","mat",["site"],"Poitiers","Vienne",46.58,0.34,"Détachement du 2e régiment du matériel","Maintenance au plus près des unités"],
+ ["2e RMAT (dét.)","Détachement du 2e régiment du matériel","mat",["site"],"Angers","Maine-et-Loire",47.47,-0.55,"Détachement du 2e régiment du matériel","Maintenance au plus près des unités"],
+ ["3e RMAT (dét.)","Détachement du 3e régiment du matériel","mat",["site"],"Montauban","Tarn-et-Garonne",44.02,1.35,"Détachement du 3e régiment du matériel","Maintenance au plus près des unités"],
+ ["3e RMAT (dét.)","Détachement du 3e régiment du matériel","mat",["site"],"Vayres","Gironde",44.9,-0.32,"Détachement du 3e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Draguignan","Var",43.537,6.465,"Détachement du 4e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Canjuers","Var",43.65,6.46,"Détachement du 4e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Carpiagne","Bouches-du-Rhône",43.248,5.5,"Détachement du 4e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Miramas","Bouches-du-Rhône",43.58,5.0,"Détachement du 4e régiment du matériel","Pôle de retour des matériels d'opérations extérieures"],
+ ["6e RMAT (dét.)","Détachement du 6e régiment du matériel","mat",["site"],"Gresswiller","Bas-Rhin",48.53,7.43,"Détachement du 6e régiment du matériel","Maintenance au plus près des unités"],
+ ["6e RMAT (dét.)","Détachement du 6e régiment du matériel","mat",["site"],"Woippy","Moselle",49.15,6.15,"Détachement du 6e régiment du matériel","Maintenance au plus près des unités"],
+ ["7e RMAT (dét.)","Détachement du 7e régiment du matériel","mat",["site"],"Varces","Isère",45.093,5.682,"Détachement du 7e régiment du matériel","Atelier de maintenance"],
+ ["7e RMAT (dét.)","Détachement du 7e régiment du matériel","mat",["site"],"Clermont-Ferrand","Puy-de-Dôme",45.78,3.09,"Détachement du 7e régiment du matériel","Atelier de maintenance"],
+ ["8e RMAT (dét.)","Détachement du 8e régiment du matériel","mat",["site"],"Versailles","Yvelines",48.8,2.13,"Détachement du 8e régiment du matériel","Maintenance au plus près des unités"],
+ ["19e RG (dét.)","Détachement du 19e régiment du génie","gen",["site"],"Mourmelon-le-Grand","Marne",49.133,4.363,"Détachement du 19e régiment du génie","51e compagnie d'appui au déploiement lourd et 53e compagnie de réserve"],
+ ["19e RG (dét.)","Détachement du 19e régiment du génie","gen",["site"],"Canjuers","Var",43.65,6.46,"Détachement du 19e régiment du génie","52e compagnie d'appui au déploiement lourd : pistes, champs de tir et infrastructures du camp"],
+ ["1er RSMV (dét.)","1er régiment du service militaire volontaire – antenne de Châlons","sma",["site"],"Châlons-en-Champagne","Marne",48.96,4.36,"Service militaire volontaire","Insertion professionnelle des jeunes"],
+ ["Musique Inf","Musique de l'infanterie","inf",["musique"],"Lille","Nord",50.63,3.06,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique ABC","Musique de l'arme blindée cavalerie","cav",["musique"],"Metz","Moselle",49.12,6.177,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique Art","Musique de l'artillerie","art",["musique"],"Lyon","Rhône",45.75,4.85,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique Para","Musique des parachutistes","inf",["musique","para"],"Toulouse","Haute-Garonne",43.61,1.49,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique Trans","Musique des transmissions","trs",["musique"],"Rennes","Ille-et-Vilaine",48.11,-1.68,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique TDM","Musique des troupes de marine","inf",["musique","marine"],"Versailles (Satory)","Yvelines",48.78,2.12,"Troupes de marine","Cérémonies, défilés et concerts"],
+ ["Musique Légion","Musique de la Légion étrangère","inf",["musique","legion"],"Aubagne","Bouches-du-Rhône",43.292,5.57,"Commandement de la Légion étrangère","Cérémonies, défilés et concerts"],
+ ["LM Autun","Lycée militaire d'Autun","ia",["lycee"],"Autun","Saône-et-Loire",46.95,4.3,"","Lycée et classes préparatoires, internat"],
+ ["LM Aix","Lycée militaire d'Aix-en-Provence","ia",["lycee"],"Aix-en-Provence","Bouches-du-Rhône",43.53,5.45,"","Lycée et classes préparatoires, internat"],
+ ["LM Saint-Cyr","Lycée militaire de Saint-Cyr-l'École","ia",["lycee"],"Saint-Cyr-l'École","Yvelines",48.8,2.06,"","Lycée et classes préparatoires, internat"],
+ ["PNM","Prytanée national militaire","ia",["lycee"],"La Flèche","Sarthe",47.7,-0.08,"","Lycée et classes préparatoires, internat"]
+].map((r, i) => ({ id: i, ab: r[0], nm: r[1], arme: r[2], tags: r[3], town: r[4], dep: r[5], lat: r[6], lon: r[7], bde: r[8], role: r[9], zone: r[10] || "metro" }));
+
+// Grands camps d'entraînement : [nom, lat, lon, surface en hectares (arrondie)]
+const CAMPS = [
+ ["Canjuers", 43.65, 6.46, 35000], ["Suippes", 49.17, 4.55, 15000], ["Mailly", 48.66, 4.22, 11000],
+ ["Mourmelon", 49.15, 4.33, 9900], ["La Courtine", 45.71, 2.25, 6300], ["Sissonne", 49.6, 3.95, 6000],
+ ["Caylus", 44.25, 1.75, 5500], ["Coëtquidan", 47.95, -2.16, 5300], ["Valdahon", 47.16, 6.39, 3600],
+ ["Bitche", 49.07, 7.47, 3500], ["Larzac", 44.02, 3.16, 3500]
+];
+
+// Glyphe d'arme dans un cadre 30x20 (inspiré des symboles militaires OTAN).
+function glyph(arme) {
+  const s = 'stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  switch (arme) {
+    case "inf": return `<path d="M3 3L27 17M27 3L3 17" ${s}/>`;
+    case "cav": return `<path d="M3 17L27 3" ${s}/>`;
+    case "art": return `<circle cx="15" cy="10" r="3.6" fill="#fff"/>`;
+    case "gen": return `<path d="M8 14V6H22V14M15 6V14" ${s}/>`;
+    case "trs": return `<path d="M3 3L13 12L17 8L27 17" ${s}/>`;
+    case "trn": return `<circle cx="15" cy="10" r="5" ${s}/><path d="M10 10H20M15 5V15" ${s}/>`;
+    case "mat": return `<path d="M7 6Q9 14 11 10H19Q21 14 23 6" ${s}/>`;
+    case "alat": return `<path d="M7 5L15 10L7 15ZM23 5L15 10L23 15Z" ${s} fill="#fff" fill-opacity=".25"/>`;
+    case "sou": return `<path d="M15 4V16M9 10H21" ${s} stroke-width="3"/>`;
+    case "sma": return `<path d="M8 15L15 5L22 15" ${s}/>`;
+    case "ia": return `<path d="M15 3L17 8.5L23 10L17 11.5L15 17L13 11.5L7 10L13 8.5Z" fill="#fff"/>`;
+  }
+  return "";
+}
+function symbol(arme, w = 30) {
+  const h = Math.round(w * 2 / 3);
+  return `<svg width="${w}" height="${h}" viewBox="-1 -1 32 22" aria-hidden="true"><rect x="0" y="0" width="30" height="20" rx="1.5" style="fill:var(--c-${arme});stroke:var(--panel);stroke-width:1.5"/>${glyph(arme)}</svg>`;
+}
+
+// État des filtres
+const state = { armes: new Set(), tags: new Set(), zones: new Set(), q: "", camps: true };
+try {
+  const saved = JSON.parse(localStorage.getItem("carte-regiments") || "null");
+  if (saved) { state.armes = new Set(saved.armes); state.tags = new Set(saved.tags); state.zones = new Set(saved.zones); state.camps = saved.camps !== false; }
+} catch (e) {}
+function save() {
+  try { localStorage.setItem("carte-regiments", JSON.stringify({ armes: [...state.armes], tags: [...state.tags], zones: [...state.zones], camps: state.camps })); } catch (e) {}
+}
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+U.forEach(u => { u.hay = norm([u.ab, u.nm, u.town, u.dep, u.bde, u.role].join(" ")); });
+
+function visible(u) {
+  if (state.armes.size && !state.armes.has(u.arme)) return false;
+  if (state.tags.size && !u.tags.some(t => state.tags.has(t))) return false;
+  if (state.zones.size && !state.zones.has(u.zone)) return false;
+  if (state.q) return state.q.split(/\s+/).every(w => u.hay.includes(w));
+  return true;
+}
+
+// Carte
+const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 13, worldCopyJump: true, attributionControl: true });
+map.attributionControl.setPrefix(false);
+map.attributionControl.addAttribution("Fonds : Natural Earth, IGN via france-geojson, villes GeoNames");
+L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let campLayer, worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, cityLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer;
+const baseRenderer = L.canvas({ padding: 0.5 });
+function drawBase() {
+  [campLayer, worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer].forEach(l => l && map.removeLayer(l));
+  worldLayer = L.geoJSON(WORLD, { renderer: baseRenderer, interactive: false, style: f => ({ color: css("--dep-line"), weight: 0.8, fillColor: f.properties.a === "FRA" ? css("--france") : css("--land"), fillOpacity: 1 }) }).addTo(map);
+  depLayer = L.geoJSON(DEPS, { renderer: baseRenderer, interactive: false, style: { color: css("--dep-line"), weight: 0.7, fillColor: css("--france"), fillOpacity: 1 } }).addTo(map);
+  // Outre-mer et étranger : côtes et limites détaillées, seulement là où l'armée est présente.
+  // Un fond de mer masque d'abord le contour mondial plus grossier.
+  zoneSeaLayer = L.layerGroup(ZONE_GEO.boxes.map(([w, s, e, n]) => L.rectangle([[s, w], [n, e]], { renderer: baseRenderer, interactive: false, stroke: false, fillColor: css("--sea"), fillOpacity: 1 }))).addTo(map);
+  // Remplissage sans contour (sinon les bords de découpe se verraient), puis côtes et frontières en traits.
+  zoneLandLayer = L.layerGroup([
+    L.geoJSON(ZONE_GEO.land, { renderer: baseRenderer, interactive: false, style: f => ({ stroke: false, fillColor: f.properties.fr ? css("--france") : css("--land"), fillOpacity: 1 }) }),
+    L.geoJSON(ZONE_GEO.coast, { renderer: baseRenderer, interactive: false, style: { color: css("--dep-line"), weight: 0.8 } })
+  ]).addTo(map);
+  zoneAdmLayer = L.geoJSON(ZONE_GEO.adm, { renderer: baseRenderer, interactive: false, style: { color: css("--dep-line"), weight: 0.8, dashArray: "4 3" } }).addTo(map);
+  lakeLayer = L.geoJSON(LAKES, { renderer: baseRenderer, interactive: false, style: { stroke: false, fillColor: css("--sea"), fillOpacity: 1 } }).addTo(map);
+  road2Layer = L.geoJSON(ROADS, { renderer: baseRenderer, interactive: false, filter: f => f.properties.t === 2, style: { color: css("--road2"), weight: 1 } }).addTo(map);
+  road1Layer = L.geoJSON(ROADS, { renderer: baseRenderer, interactive: false, filter: f => f.properties.t === 1, style: { color: css("--road"), weight: 1.6 } }).addTo(map);
+  riverLayer = L.geoJSON(RIVERS, { renderer: baseRenderer, interactive: false, style: { color: css("--river"), weight: 1.3 } }).addTo(map);
+  regLayer = L.geoJSON(REGS, { renderer: baseRenderer, interactive: false, style: { color: css("--reg-line"), weight: 1.4, fill: false } }).addTo(map);
+  // Camps : cercle de même surface que le camp réel (forme indicative)
+  campLayer = L.layerGroup(CAMPS.map(([n, lat, lon, ha]) => {
+    const r = Math.sqrt(ha * 10000 / Math.PI), top = [lat + r / 111320, lon];
+    const c = L.circle([lat, lon], { radius: r, renderer: baseRenderer, color: css("--reg-line"), weight: 1.2, dashArray: "5 4", fillColor: css("--accent"), fillOpacity: 0.1 })
+      .bindTooltip("Camp de " + n, { permanent: true, direction: "top", className: "clabel", interactive: false });
+    // Nom posé au-dessus du cercle, pour ne pas cacher les symboles des unités
+    c.on("add", () => setTimeout(() => c.openTooltip(top), 0));
+    return c.bindPopup(`<div class="pop"><div class="pop-nm">Camp de ${n}</div><dl><dt>Surface</dt><dd>environ ${ha.toLocaleString("fr-FR")} hectares</dd><dt>Forme</dt><dd>cercle de même surface (tracé réel non disponible)</dd></dl></div>`);
+  }));
+  if (state.camps) campLayer.addTo(map);
+  depLayer.eachLayer(l => {
+    l.bindTooltip(l.feature.properties.n, { permanent: true, direction: "center", className: "dlabel", interactive: false }).openTooltip(l.getBounds().getCenter());
+  });
+  styleByZoom();
+  if (cityLayer) { resetCities(); }
+}
+// Routes : autoroutes dès le zoom 6, routes secondaires dès le zoom 7.
+function styleByZoom() {
+  const z = map.getZoom ? (map._loaded ? map.getZoom() : 6) : 6;
+  road1Layer?.setStyle({ opacity: z >= 6 ? 0.55 : 0, weight: z >= 9 ? 2.6 : z >= 7 ? 2 : 1.4 });
+  road2Layer?.setStyle({ opacity: z >= 7 ? 0.6 : 0, weight: z >= 9 ? 1.6 : 1 });
+  riverLayer?.setStyle({ weight: z >= 9 ? 2.2 : z >= 7 ? 1.6 : 1.1 });
+}
+drawBase();
+const mq = window.matchMedia("(prefers-color-scheme: dark)");
+mq.addEventListener?.("change", drawBase);
+new MutationObserver(drawBase).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+function setZoomClass() {
+  const z = map.getZoom(), el = map.getContainer();
+  el.classList.toggle("z7", z >= 7);
+  el.classList.toggle("z8", z >= 8);
+  el.classList.toggle("z9", z >= 9);
+  styleByZoom();
+  refreshLabels();
+}
+// Leaflet mesure les étiquettes à l'ouverture : on les remesure quand leur affichage change.
+function refreshLabels() {
+  unitLayer.eachLayer(m => m.getTooltip()?.update());
+  depLayer?.eachLayer(l => l.getTooltip()?.update());
+}
+map.on("zoomend", setZoomClass);
+
+// Unités à moins de 10 km les unes des autres : on les dispose en petite grille autour du même point.
+const groups = {};
+const anchors = [];
+U.forEach(u => {
+  const k = Math.cos(u.lat * Math.PI / 180);
+  let a = anchors.find(a => Math.abs(a.lat - u.lat) < 0.09 && Math.abs(a.lon - u.lon) * k < 0.09);
+  if (!a) { a = { lat: u.lat, lon: u.lon, key: anchors.length }; anchors.push(a); }
+  u.mlat = a.lat; u.mlon = a.lon;
+  (groups[a.key] = groups[a.key] || []).push(u);
+});
+const W = 30, H = 20;
+Object.values(groups).forEach(g => {
+  const n = g.length, cols = Math.min(n, 2), rows = Math.ceil(n / cols);
+  g.forEach((u, i) => {
+    const c = i % cols, r = Math.floor(i / cols);
+    u.dx = (c - (cols - 1) / 2) * (W + 4);
+    u.dy = (r - (rows - 1) / 2) * (H + 4);
+    u.dir = cols === 2 && c === 0 ? "left" : "right";
+  });
+});
+
+function popupHtml(u) {
+  const tags = u.tags.map(t => `<span>${TAGS[t]}</span>`).join("");
+  return `<div class="pop"><div class="pop-h">${symbol(u.arme, 36)}<div class="pop-ab">${u.ab}</div></div>
+    <div class="pop-nm">${u.nm}</div>
+    <dl><dt>Garnison</dt><dd>${u.town} (${u.dep})</dd>
+    <dt>Arme</dt><dd>${ARMES[u.arme].label}</dd>
+    ${u.bde ? `<dt>Rattaché à</dt><dd>${u.bde}</dd>` : ""}
+    <dt>Mission</dt><dd>${u.role}</dd></dl>
+    ${tags ? `<div class="tags">${tags}</div>` : ""}</div>`;
+}
+
+const unitLayer = L.layerGroup().addTo(map);
+U.forEach(u => {
+  const icon = L.divIcon({ className: "unit", html: symbol(u.arme), iconSize: [W + 2, H + 2], iconAnchor: [W / 2 + 1 - u.dx, H / 2 + 1 - u.dy], popupAnchor: [u.dx, u.dy - H / 2], tooltipAnchor: [u.dir === "left" ? u.dx - W / 2 - 2 : u.dx + W / 2 + 2, u.dy] });
+  u.marker = L.marker([u.mlat, u.mlon], { icon, title: u.ab + " · " + u.town, riseOnHover: true, keyboard: true })
+    .bindPopup(popupHtml(u), { maxWidth: 300, autoPanPadding: [20, 70] })
+    .bindTooltip(u.ab, { permanent: true, direction: u.dir, className: "ulabel", interactive: false });
+});
+
+// Villes : calque canvas en tuiles, au-dessus du fond et sous les symboles.
+// Pour chaque niveau de zoom on place les noms par ordre d'importance, sans chevauchement
+// entre eux ni avec les symboles d'unités affichés.
+const CITIES = CITY_RAW.map(c => ({ n: c[0], lat: c[1], lon: c[2], pop: c[3], fr: c[4] === 1, gar: false }));
+U.forEach(u => {
+  const name = u.town.replace(/\s*\(.*\)$/, "");
+  const k = Math.cos(u.lat * Math.PI / 180);
+  const near = CITIES.find(c => norm(c.n) === norm(name) && Math.abs(c.lat - u.lat) < 0.06 && Math.abs(c.lon - u.lon) * k < 0.06);
+  if (near) near.gar = true;
+  else CITIES.push({ n: name, lat: u.lat, lon: u.lon, pop: 0, fr: true, gar: true });
+});
+const minPop = z => z <= 4 ? 500000 : z === 5 ? 150000 : z === 6 ? 45000 : z === 7 ? 14000 : z === 8 ? 5000 : z === 9 ? 2000 : 0;
+const cityFont = c => {
+  const fam = '"Source Sans 3", "Segoe UI", system-ui, sans-serif';
+  if (!c.fr) return `400 ${c.pop >= 500000 ? 12 : 11}px ${fam}`;
+  if (c.pop >= 500000) return `600 13.5px ${fam}`;
+  if (c.pop >= 100000) return `600 12.5px ${fam}`;
+  if (c.pop >= 20000 || c.gar) return `400 12px ${fam}`;
+  return `400 11px ${fam}`;
+};
+const measureCtx = document.createElement("canvas").getContext("2d");
+let widthCache = {};
+function textW(c) {
+  const f = cityFont(c), key = f + c.n;
+  if (widthCache[key] == null) { measureCtx.font = f; widthCache[key] = measureCtx.measureText(c.n).width; }
+  return widthCache[key];
+}
+let placeCache = {};
+function placement(z) {
+  if (placeCache[z]) return placeCache[z];
+  const CELL = 128, grid = new Map(), placed = [];
+  const keys = b => { const r = []; for (let x = Math.floor(b.x0 / CELL); x <= Math.floor(b.x1 / CELL); x++) for (let y = Math.floor(b.y0 / CELL); y <= Math.floor(b.y1 / CELL); y++) r.push(x + ":" + y); return r; };
+  const hit = b => keys(b).some(k => (grid.get(k) || []).some(o => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0));
+  const add = b => keys(b).forEach(k => { if (!grid.has(k)) grid.set(k, []); grid.get(k).push(b); });
+  // Obstacles : symboles et sigles des unités visibles
+  const sc = z < 7 ? 0.78 : 1;
+  U.forEach(u => {
+    if (!unitLayer.hasLayer(u.marker)) return;
+    const p = map.project([u.mlat, u.mlon], z), cx = p.x + u.dx, cy = p.y + u.dy;
+    add({ x0: cx - 16 * sc, x1: cx + 16 * sc, y0: cy - 11 * sc, y1: cy + 11 * sc });
+    if (z >= 7) {
+      const w = u.ab.length * 7 + 12;
+      add(u.dir === "left" ? { x0: cx - 18 - w, x1: cx - 16, y0: cy - 9, y1: cy + 9 } : { x0: cx + 16, x1: cx + 18 + w, y0: cy - 9, y1: cy + 9 });
+    }
+  });
+  const mp = minPop(z);
+  // Les villes étrangères restent discrètes : seuil de population plus haut.
+  const cand = CITIES.filter(c => c.pop >= (c.fr ? mp : Math.max(mp * 3, 200000)) || (c.gar && z >= 7))
+    .sort((a, b) => (b.pop * (b.fr ? 1 : 0.3) + (b.gar ? 120000 : 0)) - (a.pop * (a.fr ? 1 : 0.3) + (a.gar ? 120000 : 0)));
+  cand.forEach(c => {
+    const p = map.project([c.lat, c.lon], z), w = textW(c), h = c.pop >= 100000 ? 16 : 14;
+    const dot = { x0: p.x - 3, x1: p.x + 3, y0: p.y - 3, y1: p.y + 3 };
+    const dotFree = !hit(dot);
+    const spots = [[6, -h / 2], [-6 - w, -h / 2], [-w / 2, -h - 5], [-w / 2, 5], [-w / 2, 17], [-w / 2, -h - 17], [-w / 2, 29], [-w / 2, -h - 29]];
+    for (const [ox, oy] of spots) {
+      const b = { x0: p.x + ox - 2, x1: p.x + ox + w + 2, y0: p.y + oy, y1: p.y + oy + h };
+      if (hit(b)) continue;
+      add(b); if (dotFree) add(dot);
+      placed.push({ c, x: p.x, y: p.y, tx: p.x + ox, ty: p.y + oy + h / 2, dot: dotFree, b });
+      return;
+    }
+  });
+  return (placeCache[z] = placed);
+}
+const CityLayer = L.GridLayer.extend({
+  createTile(coords) {
+    const t = document.createElement("canvas"), sz = this.getTileSize(), r = window.devicePixelRatio || 1;
+    t.width = sz.x * r; t.height = sz.y * r;
+    const ctx = t.getContext("2d"); ctx.scale(r, r);
+    const ox = coords.x * sz.x, oy = coords.y * sz.y;
+    const ink = css("--city"), soft = css("--city-soft"), halo = css("--city-halo");
+    ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+    placement(coords.z).forEach(it => {
+      const b = it.b;
+      if (b.x1 < ox - 4 || b.x0 > ox + sz.x + 4 || b.y1 < oy - 4 || b.y0 > oy + sz.y + 4) return;
+      const x = it.x - ox, y = it.y - oy;
+      if (it.dot) {
+        ctx.beginPath(); ctx.arc(x, y, it.c.pop >= 100000 ? 2.5 : 1.8, 0, Math.PI * 2);
+        ctx.fillStyle = soft; ctx.strokeStyle = halo; ctx.lineWidth = 1; ctx.fill(); ctx.stroke();
+      }
+      ctx.font = cityFont(it.c);
+      ctx.strokeStyle = halo; ctx.lineWidth = 3; ctx.strokeText(it.c.n, it.tx - ox, it.ty - oy);
+      ctx.fillStyle = it.c.fr && it.c.pop >= 20000 ? ink : soft; ctx.fillText(it.c.n, it.tx - ox, it.ty - oy);
+    });
+    return t;
+  }
+});
+map.createPane("cities");
+map.getPane("cities").style.zIndex = 450;
+map.getPane("cities").style.pointerEvents = "none";
+cityLayer = new CityLayer({ pane: "cities", updateWhenZooming: false, keepBuffer: 4 }).addTo(map);
+function resetCities() { placeCache = {}; cityLayer?.redraw(); }
+document.fonts?.ready.then(() => { widthCache = {}; resetCities(); });
+
+// Panneau
+function counts(key) {
+  const c = {};
+  U.forEach(u => {
+    const saveSet = state[key];
+    state[key] = new Set();
+    const ok = visible(u);
+    state[key] = saveSet;
+    if (!ok) return;
+    const vals = key === "armes" ? [u.arme] : key === "tags" ? u.tags : [u.zone];
+    vals.forEach(v => c[v] = (c[v] || 0) + 1);
+  });
+  return c;
+}
+function chip(container, key, id, label, withSymbol) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip" + (withSymbol ? "" : " tag"); b.dataset.k = key; b.dataset.v = id;
+  b.innerHTML = (withSymbol ? symbol(id, 24) : "") + `<span>${label}</span><span class="n"></span>`;
+  b.addEventListener("click", () => {
+    const s = state[key];
+    s.has(id) ? s.delete(id) : s.add(id);
+    save(); render();
+  });
+  container.appendChild(b);
+}
+const elArmes = document.getElementById("armes"), elTags = document.getElementById("tags"), elZones = document.getElementById("zones");
+Object.entries(ARMES).forEach(([k, v]) => chip(elArmes, "armes", k, v.label, true));
+Object.entries(TAGS).forEach(([k, v]) => chip(elTags, "tags", k, v, false));
+Object.entries(ZONES).forEach(([k, v]) => chip(elZones, "zones", k, v, false));
+document.querySelectorAll("[data-reset]").forEach(b => b.addEventListener("click", () => {
+  state[{ arme: "armes", tag: "tags", zone: "zones" }[b.dataset.reset]].clear(); save(); render();
+}));
+document.getElementById("q").addEventListener("input", e => { state.q = norm(e.target.value.trim()); render(); });
+document.getElementById("nAll").textContent = U.length;
+const campsChip = document.getElementById("campsChip");
+campsChip.setAttribute("aria-pressed", state.camps);
+campsChip.addEventListener("click", () => {
+  state.camps = !state.camps; save();
+  campsChip.setAttribute("aria-pressed", state.camps);
+  state.camps ? campLayer.addTo(map) : map.removeLayer(campLayer);
+});
+
+const elList = document.getElementById("list");
+function render() {
+  const cnt = { armes: counts("armes"), tags: counts("tags"), zones: counts("zones") };
+  document.querySelectorAll(".chip[data-k]").forEach(b => {
+    const k = b.dataset.k, v = b.dataset.v;
+    b.setAttribute("aria-pressed", state[k].has(v));
+    b.querySelector(".n").textContent = cnt[k][v] || 0;
+  });
+  unitLayer.clearLayers();
+  const shown = U.filter(visible);
+  shown.forEach(u => unitLayer.addLayer(u.marker));
+  document.getElementById("nShown").textContent = shown.length;
+  refreshLabels();
+  resetCities();
+  elList.innerHTML = "";
+  if (!shown.length) { elList.innerHTML = `<p class="empty">Aucune unité ne correspond. Retirez un filtre ou changez la recherche.</p>`; return; }
+  const order = Object.keys(ARMES);
+  shown.slice().sort((a, b) => order.indexOf(a.arme) - order.indexOf(b.arme) || a.ab.localeCompare(b.ab, "fr", { numeric: true }))
+    .forEach(u => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "item";
+      b.innerHTML = `${symbol(u.arme, 30)}<span class="t"><span class="ab">${u.ab}</span> · ${u.town}<div class="nm">${u.nm}</div></span>`;
+      b.addEventListener("click", () => {
+        if (window.matchMedia("(max-width: 760px)").matches) closePanel();
+        map.flyTo([u.mlat, u.mlon], Math.max(map.getZoom(), 10), { duration: 0.8 });
+        map.once("moveend", () => u.marker.openPopup());
+      });
+      elList.appendChild(b);
+    });
+}
+
+// Raccourcis géographiques
+const VIEWS = {
+  metro: [[41.3, -5.2], [51.1, 9.6]],
+  antilles: [[14.3, -61.9], [16.6, -60.7]],
+  guyane: [[2.1, -54.7], [5.9, -51.5]],
+  oi: [[-21.5, 44.8], [-12.4, 56.0]],
+  nc: [[-22.8, 163.5], [-19.5, 168.2]],
+  pf: [[-17.9, -150.0], [-17.3, -149.1]],
+  djib: [[10.9, 41.7], [12.8, 43.5]],
+  eau: [[22.6, 51.5], [26.2, 56.5]],
+  monde: [[-45, -160], [60, 175]]
+};
+const elGoto = document.getElementById("goto");
+elGoto.addEventListener("change", () => map.flyToBounds(VIEWS[elGoto.value], { duration: 0.9, padding: [20, 20] }));
+map.fitBounds(VIEWS.metro);
+// Sur iPhone (appli écran d'accueil), la taille de l'écran peut être fausse au démarrage :
+// on recalcule la carte dès que son cadre change de taille.
+let sized = map.getSize().y > 0;
+const fixSize = () => {
+  map.invalidateSize(false);
+  if (!sized && map.getSize().y > 0) { sized = true; map.fitBounds(VIEWS.metro); }
+};
+if (window.ResizeObserver) new ResizeObserver(fixSize).observe(map.getContainer());
+["load", "pageshow", "orientationchange"].forEach(ev => window.addEventListener(ev, () => setTimeout(fixSize, 50)));
+setTimeout(fixSize, 300);
+setZoomClass();
+
+// Tiroir mobile
+const panel = document.getElementById("panel"), toggle = document.getElementById("toggle");
+function closePanel() { panel.classList.add("closed"); toggle.setAttribute("aria-expanded", "false"); toggle.textContent = "Filtres"; }
+function openPanel() { panel.classList.remove("closed"); toggle.setAttribute("aria-expanded", "true"); toggle.textContent = "Voir la carte"; }
+toggle.addEventListener("click", () => panel.classList.contains("closed") ? openPanel() : closePanel());
+if (window.matchMedia("(max-width: 760px)").matches) closePanel();
+
+render();
+</script>
