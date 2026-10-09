@@ -4,7 +4,8 @@ Carte interactive des régiments, centres et écoles de l'Armée de terre.
 
 **Ouvrir la carte : https://adeh44.github.io/carte-regiments/**
 
-- Filtres par arme, spécialité (montagne, parachutistes, Légion, troupes de marine…) et zone.
+- Régiments, centres d'entraînement, écoles, groupements d'instruction, bases du matériel, détachements, musiques et lycées militaires.
+- Filtres par arme, spécialité (montagne, parachutistes, Légion, troupes de marine…) et zone. Grands camps d'entraînement en option.
 - Zoom jusqu'à la ville, comme sur une carte routière.
 - Installable comme une appli sur iPhone (Safari > Partager > Sur l'écran d'accueil), Android et PC.
 - Fonctionne hors ligne après la première ouverture.

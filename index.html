@@ -785,6 +785,9 @@ h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-heig
 .ulabel::before { display: none; }
 .dlabel { background: none; border: 0; box-shadow: none; color: var(--ink-soft); font: 600 11px var(--f-display); text-transform: uppercase; letter-spacing: .12em; opacity: .75; }
 .dlabel::before { display: none; }
+.clabel { background: none; border: 0; box-shadow: none; color: var(--accent); font: italic 600 12px var(--f-display); letter-spacing: .04em; text-shadow: 0 0 3px var(--paper), 0 0 3px var(--paper); }
+.clabel::before { display: none; }
+#map:not(.z8) .clabel { display: none; }
 #map:not(.z7) .ulabel, #map:not(.z7) .dlabel, #map.z9 .dlabel { display: none; }
 
 @media (max-width: 760px) {
@@ -829,6 +832,10 @@ h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-heig
       <div class="group">
         <div class="group-h"><h2>Zone</h2><button class="link" type="button" data-reset="zone">Effacer</button></div>
         <div class="chips" id="zones"></div>
+      </div>
+      <div class="group">
+        <div class="group-h"><h2>Afficher</h2></div>
+        <div class="chips"><button class="chip tag" type="button" id="campsChip" aria-pressed="true">Camps d'entraînement <span class="n">11</span></button></div>
       </div>
       <div class="group">
         <label class="group-h" for="q"><h2>Chercher</h2></label>
@@ -907,7 +914,10 @@ const TAGS = {
   cyber: "Cyber et guerre électronique",
   nrbc: "NRBC",
   secours: "Sécurité civile et pompiers",
-  reserve: "Réserve"
+  reserve: "Réserve",
+  site: "Bases et détachements",
+  musique: "Musiques militaires",
+  lycee: "Lycées militaires"
 };
 const ZONES = { metro: "Métropole", om: "Outre-mer", etr: "Étranger" };
 
@@ -1000,7 +1010,7 @@ const U = [
  ["785e CGE","785e compagnie de guerre électronique","trs",["rens","cyber"],"Saint-Jacques-de-la-Lande","Ille-et-Vilaine",48.09,-1.72,"Brigade de renseignement et cyber-électronique","Guerre électronique (compagnie, pas un régiment)"],
 
  ["121e RT","121e régiment du train","trn",[],"Montlhéry","Essonne",48.64,2.27,"Brigade logistique","Transport et ravitaillement"],
- ["503e RT","503e régiment du train","trn",[],"Nîmes","Gard",43.836,4.36,"Brigade logistique","Transport et ravitaillement"],
+ ["503e RT","503e régiment du train","trn",[],"Saint-Gilles","Gard",43.678,4.432,"Brigade logistique","Transport et ravitaillement"],
  ["511e RT","511e régiment du train","trn",[],"Auxonne","Côte-d'Or",47.193,5.388,"Brigade logistique","Transport et ravitaillement"],
  ["515e RT","515e régiment du train","trn",[],"La Braconne","Charente",45.68,0.29,"Brigade logistique","Transport et ravitaillement"],
  ["516e RT","516e régiment du train","trn",[],"Toul","Meurthe-et-Moselle",48.68,5.89,"Brigade logistique","Transport et ravitaillement"],
@@ -1070,8 +1080,53 @@ const U = [
  ["1er RSMV","1er régiment du service militaire volontaire","sma",[],"Montigny-lès-Metz","Moselle",49.1,6.15,"Service militaire volontaire","Insertion professionnelle des jeunes (antenne à Châlons-en-Champagne)"],
  ["2e RSMV","2e régiment du service militaire volontaire","sma",[],"Brétigny-sur-Orge","Essonne",48.61,2.31,"Service militaire volontaire","Insertion professionnelle des jeunes"],
  ["3e RSMV","3e régiment du service militaire volontaire","sma",[],"La Rochelle","Charente-Maritime",46.16,-1.15,"Service militaire volontaire","Insertion professionnelle des jeunes"],
- ["DSMA","Détachement du service militaire adapté","sma",["ecole"],"Périgueux (quartier Daumesnil)","Dordogne",45.19,0.72,"Commandement du service militaire adapté","Seule unité du SMA en métropole : formation des cadres et des formateurs envoyés outre-mer, accueil de stagiaires ultramarins"]
+ ["DSMA","Détachement du service militaire adapté","sma",["ecole"],"Périgueux (quartier Daumesnil)","Dordogne",45.19,0.72,"Commandement du service militaire adapté","Seule unité du SMA en métropole : formation des cadres et des formateurs envoyés outre-mer, accueil de stagiaires ultramarins"],
+ ["12e BSMAT","12e base de soutien du matériel","mat",["site"],"Neuvy-Pailloux","Indre",46.88,1.86,"Service de la maintenance industrielle terrestre","Portion centrale : rénovation industrielle des véhicules"],
+ ["12e BSMAT (dét.)","12e base de soutien du matériel – détachement de Gien","mat",["site"],"Gien","Loiret",47.69,2.63,"Service de la maintenance industrielle terrestre","Maintenance industrielle"],
+ ["12e BSMAT (dét.)","12e base de soutien du matériel – détachement de Douai","mat",["site"],"Douai","Nord",50.37,3.08,"Service de la maintenance industrielle terrestre","Maintenance industrielle"],
+ ["12e BSMAT (dét.)","12e base de soutien du matériel – détachement du Mans","mat",["site"],"Le Mans","Sarthe",48.0,0.2,"Service de la maintenance industrielle terrestre","Maintenance industrielle (site cité par la fiche officielle la plus récente)"],
+ ["13e BSMAT","13e base de soutien du matériel","mat",["site"],"Clermont-Ferrand","Puy-de-Dôme",45.78,3.09,"Service de la maintenance industrielle terrestre","Portion centrale : régénération des VBL et petits véhicules protégés"],
+ ["13e BSMAT (dét.)","13e base de soutien du matériel – détachement de Moulins","mat",["site"],"Moulins","Allier",46.57,3.33,"Service de la maintenance industrielle terrestre","Stockage des pièces de rechange"],
+ ["13e BSMAT (dét.)","13e base de soutien du matériel – détachement de Tulle","mat",["site"],"Tulle","Corrèze",45.27,1.77,"Service de la maintenance industrielle terrestre","Maintenance industrielle"],
+ ["13e BSMAT (dét.)","13e base de soutien du matériel – détachement de Saint-Astier","mat",["site"],"Saint-Astier","Dordogne",45.15,0.53,"Service de la maintenance industrielle terrestre","Stockage longue durée des véhicules complets de l'armée de Terre"],
+ ["14e BSMAT","14e base de soutien du matériel","mat",["site"],"Nouâtre","Indre-et-Loire",47.05,0.55,"Service de la maintenance industrielle terrestre","Portion centrale : maintenance des systèmes de télécommunication"],
+ ["14e BSMAT (dét.)","14e base de soutien du matériel – détachement de Bruz","mat",["site"],"Bruz","Ille-et-Vilaine",48.03,-1.75,"Service de la maintenance industrielle terrestre","Optique, optronique, détection électromagnétique et hydraulique"],
+ ["14e BSMAT (dét.)","14e base de soutien du matériel – détachement de Poitiers","mat",["site"],"Poitiers","Vienne",46.58,0.34,"Service de la maintenance industrielle terrestre","Maintenance de l'armement individuel et collectif"],
+ ["2e RMAT (dét.)","Détachement du 2e régiment du matériel","mat",["site"],"Saint-Jacques-de-la-Lande","Ille-et-Vilaine",48.09,-1.72,"Détachement du 2e régiment du matériel","Maintenance au plus près des unités"],
+ ["2e RMAT (dét.)","Détachement du 2e régiment du matériel","mat",["site"],"Poitiers","Vienne",46.58,0.34,"Détachement du 2e régiment du matériel","Maintenance au plus près des unités"],
+ ["2e RMAT (dét.)","Détachement du 2e régiment du matériel","mat",["site"],"Angers","Maine-et-Loire",47.47,-0.55,"Détachement du 2e régiment du matériel","Maintenance au plus près des unités"],
+ ["3e RMAT (dét.)","Détachement du 3e régiment du matériel","mat",["site"],"Montauban","Tarn-et-Garonne",44.02,1.35,"Détachement du 3e régiment du matériel","Maintenance au plus près des unités"],
+ ["3e RMAT (dét.)","Détachement du 3e régiment du matériel","mat",["site"],"Vayres","Gironde",44.9,-0.32,"Détachement du 3e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Draguignan","Var",43.537,6.465,"Détachement du 4e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Canjuers","Var",43.65,6.46,"Détachement du 4e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Carpiagne","Bouches-du-Rhône",43.248,5.5,"Détachement du 4e régiment du matériel","Maintenance au plus près des unités"],
+ ["4e RMAT (dét.)","Détachement du 4e régiment du matériel","mat",["site"],"Miramas","Bouches-du-Rhône",43.58,5.0,"Détachement du 4e régiment du matériel","Pôle de retour des matériels d'opérations extérieures"],
+ ["6e RMAT (dét.)","Détachement du 6e régiment du matériel","mat",["site"],"Gresswiller","Bas-Rhin",48.53,7.43,"Détachement du 6e régiment du matériel","Maintenance au plus près des unités"],
+ ["6e RMAT (dét.)","Détachement du 6e régiment du matériel","mat",["site"],"Woippy","Moselle",49.15,6.15,"Détachement du 6e régiment du matériel","Maintenance au plus près des unités"],
+ ["7e RMAT (dét.)","Détachement du 7e régiment du matériel","mat",["site"],"Varces","Isère",45.093,5.682,"Détachement du 7e régiment du matériel","Atelier de maintenance"],
+ ["7e RMAT (dét.)","Détachement du 7e régiment du matériel","mat",["site"],"Clermont-Ferrand","Puy-de-Dôme",45.78,3.09,"Détachement du 7e régiment du matériel","Atelier de maintenance"],
+ ["8e RMAT (dét.)","Détachement du 8e régiment du matériel","mat",["site"],"Versailles","Yvelines",48.8,2.13,"Détachement du 8e régiment du matériel","Maintenance au plus près des unités"],
+ ["1er RSMV (dét.)","1er régiment du service militaire volontaire – antenne de Châlons","sma",["site"],"Châlons-en-Champagne","Marne",48.96,4.36,"Service militaire volontaire","Insertion professionnelle des jeunes"],
+ ["Musique Inf","Musique de l'infanterie","inf",["musique"],"Lille","Nord",50.63,3.06,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique ABC","Musique de l'arme blindée cavalerie","cav",["musique"],"Metz","Moselle",49.12,6.177,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique Art","Musique de l'artillerie","art",["musique"],"Lyon","Rhône",45.75,4.85,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique Para","Musique des parachutistes","inf",["musique","para"],"Toulouse","Haute-Garonne",43.61,1.49,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique Trans","Musique des transmissions","trs",["musique"],"Rennes","Ille-et-Vilaine",48.11,-1.68,"Commandement des musiques de l'armée de Terre","Cérémonies, défilés et concerts"],
+ ["Musique TDM","Musique des troupes de marine","inf",["musique","marine"],"Versailles (Satory)","Yvelines",48.78,2.12,"Troupes de marine","Cérémonies, défilés et concerts"],
+ ["Musique Légion","Musique de la Légion étrangère","inf",["musique","legion"],"Aubagne","Bouches-du-Rhône",43.292,5.57,"Commandement de la Légion étrangère","Cérémonies, défilés et concerts"],
+ ["LM Autun","Lycée militaire d'Autun","ia",["lycee"],"Autun","Saône-et-Loire",46.95,4.3,"","Lycée et classes préparatoires, internat"],
+ ["LM Aix","Lycée militaire d'Aix-en-Provence","ia",["lycee"],"Aix-en-Provence","Bouches-du-Rhône",43.53,5.45,"","Lycée et classes préparatoires, internat"],
+ ["LM Saint-Cyr","Lycée militaire de Saint-Cyr-l'École","ia",["lycee"],"Saint-Cyr-l'École","Yvelines",48.8,2.06,"","Lycée et classes préparatoires, internat"],
+ ["PNM","Prytanée national militaire","ia",["lycee"],"La Flèche","Sarthe",47.7,-0.08,"","Lycée et classes préparatoires, internat"]
 ].map((r, i) => ({ id: i, ab: r[0], nm: r[1], arme: r[2], tags: r[3], town: r[4], dep: r[5], lat: r[6], lon: r[7], bde: r[8], role: r[9], zone: r[10] || "metro" }));
+
+// Grands camps d'entraînement : [nom, lat, lon, surface en hectares (arrondie)]
+const CAMPS = [
+ ["Canjuers", 43.65, 6.46, 35000], ["Suippes", 49.17, 4.55, 15000], ["Mailly", 48.66, 4.22, 11000],
+ ["Mourmelon", 49.15, 4.33, 9900], ["La Courtine", 45.71, 2.25, 6300], ["Sissonne", 49.6, 3.95, 6000],
+ ["Caylus", 44.25, 1.75, 5500], ["Coëtquidan", 47.95, -2.16, 5300], ["Valdahon", 47.16, 6.39, 3600],
+ ["Bitche", 49.07, 7.47, 3500], ["Larzac", 44.02, 3.16, 3500]
+];
 
 // Glyphe d'arme dans un cadre 30x20 (inspiré des symboles militaires OTAN).
 function glyph(arme) {
@@ -1097,13 +1152,13 @@ function symbol(arme, w = 30) {
 }
 
 // État des filtres
-const state = { armes: new Set(), tags: new Set(), zones: new Set(), q: "" };
+const state = { armes: new Set(), tags: new Set(), zones: new Set(), q: "", camps: true };
 try {
   const saved = JSON.parse(localStorage.getItem("carte-regiments") || "null");
-  if (saved) { state.armes = new Set(saved.armes); state.tags = new Set(saved.tags); state.zones = new Set(saved.zones); }
+  if (saved) { state.armes = new Set(saved.armes); state.tags = new Set(saved.tags); state.zones = new Set(saved.zones); state.camps = saved.camps !== false; }
 } catch (e) {}
 function save() {
-  try { localStorage.setItem("carte-regiments", JSON.stringify({ armes: [...state.armes], tags: [...state.tags], zones: [...state.zones] })); } catch (e) {}
+  try { localStorage.setItem("carte-regiments", JSON.stringify({ armes: [...state.armes], tags: [...state.tags], zones: [...state.zones], camps: state.camps })); } catch (e) {}
 }
 const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 U.forEach(u => { u.hay = norm([u.ab, u.nm, u.town, u.dep, u.bde, u.role].join(" ")); });
@@ -1123,10 +1178,10 @@ map.attributionControl.addAttribution("Fonds : Natural Earth, IGN via france-geo
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-let worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, cityLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer;
+let campLayer, worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, cityLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer;
 const baseRenderer = L.canvas({ padding: 0.5 });
 function drawBase() {
-  [worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer].forEach(l => l && map.removeLayer(l));
+  [campLayer, worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer].forEach(l => l && map.removeLayer(l));
   worldLayer = L.geoJSON(WORLD, { renderer: baseRenderer, interactive: false, style: f => ({ color: css("--dep-line"), weight: 0.8, fillColor: f.properties.a === "FRA" ? css("--france") : css("--land"), fillOpacity: 1 }) }).addTo(map);
   depLayer = L.geoJSON(DEPS, { renderer: baseRenderer, interactive: false, style: { color: css("--dep-line"), weight: 0.7, fillColor: css("--france"), fillOpacity: 1 } }).addTo(map);
   // Outre-mer et étranger : côtes et limites détaillées, seulement là où l'armée est présente.
@@ -1143,6 +1198,16 @@ function drawBase() {
   road1Layer = L.geoJSON(ROADS, { renderer: baseRenderer, interactive: false, filter: f => f.properties.t === 1, style: { color: css("--road"), weight: 1.6 } }).addTo(map);
   riverLayer = L.geoJSON(RIVERS, { renderer: baseRenderer, interactive: false, style: { color: css("--river"), weight: 1.3 } }).addTo(map);
   regLayer = L.geoJSON(REGS, { renderer: baseRenderer, interactive: false, style: { color: css("--reg-line"), weight: 1.4, fill: false } }).addTo(map);
+  // Camps : cercle de même surface que le camp réel (forme indicative)
+  campLayer = L.layerGroup(CAMPS.map(([n, lat, lon, ha]) => {
+    const r = Math.sqrt(ha * 10000 / Math.PI), top = [lat + r / 111320, lon];
+    const c = L.circle([lat, lon], { radius: r, renderer: baseRenderer, color: css("--reg-line"), weight: 1.2, dashArray: "5 4", fillColor: css("--accent"), fillOpacity: 0.1 })
+      .bindTooltip("Camp de " + n, { permanent: true, direction: "top", className: "clabel", interactive: false });
+    // Nom posé au-dessus du cercle, pour ne pas cacher les symboles des unités
+    c.on("add", () => setTimeout(() => c.openTooltip(top), 0));
+    return c.bindPopup(`<div class="pop"><div class="pop-nm">Camp de ${n}</div><dl><dt>Surface</dt><dd>environ ${ha.toLocaleString("fr-FR")} hectares</dd><dt>Forme</dt><dd>cercle de même surface (tracé réel non disponible)</dd></dl></div>`);
+  }));
+  if (state.camps) campLayer.addTo(map);
   depLayer.eachLayer(l => {
     l.bindTooltip(l.feature.properties.n, { permanent: true, direction: "center", className: "dlabel", interactive: false }).openTooltip(l.getBounds().getCenter());
   });
@@ -1344,11 +1409,18 @@ document.querySelectorAll("[data-reset]").forEach(b => b.addEventListener("click
 }));
 document.getElementById("q").addEventListener("input", e => { state.q = norm(e.target.value.trim()); render(); });
 document.getElementById("nAll").textContent = U.length;
+const campsChip = document.getElementById("campsChip");
+campsChip.setAttribute("aria-pressed", state.camps);
+campsChip.addEventListener("click", () => {
+  state.camps = !state.camps; save();
+  campsChip.setAttribute("aria-pressed", state.camps);
+  state.camps ? campLayer.addTo(map) : map.removeLayer(campLayer);
+});
 
 const elList = document.getElementById("list");
 function render() {
   const cnt = { armes: counts("armes"), tags: counts("tags"), zones: counts("zones") };
-  document.querySelectorAll(".chip").forEach(b => {
+  document.querySelectorAll(".chip[data-k]").forEach(b => {
     const k = b.dataset.k, v = b.dataset.v;
     b.setAttribute("aria-pressed", state[k].has(v));
     b.querySelector(".n").textContent = cnt[k][v] || 0;
