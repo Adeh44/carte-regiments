@@ -97,6 +97,10 @@ shutil.copytree(os.path.join(BUILD, 't'), os.path.join(ROOT, 't'))
 # La version change dès que la page, une tuile ou ce script change : l'appli se met alors à jour.
 h = hashlib.sha1((s + open(__file__, encoding='utf-8').read()).encode())
 for f in tuiles: h.update(open(os.path.join(ROOT, 't', f), 'rb').read())
+# Fond topo et relief (déposés par le workflow Site) : un nouveau fond change aussi la version,
+# sinon l'appli garderait les anciennes tuiles en mémoire.
+for ix in ('o/index.json', 'r/index.json'):
+    if os.path.exists(os.path.join(ROOT, ix)): h.update(open(os.path.join(ROOT, ix), 'rb').read())
 version = h.hexdigest()[:10]
 # Préchargés à l'installation : le monde aux zooms 2-3 et la métropole jusqu'au zoom 6
 # (paquets des carrés z3 x 3-4, y 2-3). Le reste se garde au fil de la visite.
