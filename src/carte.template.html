@@ -496,7 +496,7 @@ const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 13, worldCopyJump: 
 window.__map = map;
 map.attributionControl.setPrefix(false);
 // Numéro de version affiché : à augmenter à chaque publication (sert à vérifier la version reçue sur le téléphone).
-const VERSION = "v0.12";
+const VERSION = "v0.13";
 map.attributionControl.addAttribution(VERSION + " · Fonds : IGN (Admin Express via france-geojson), Natural Earth 1:10M, villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
@@ -737,19 +737,30 @@ function openUnit(u) {
   L.popup({ maxWidth: 300, autoPanPadding: [20, 70], offset: [u.dx, 7 + u.dy - H / 2] })
     .setLatLng([u.mlat, u.mlon]).setContent(popupHtml(u)).openOn(map);
 }
-// Quelle unité sous le doigt ? (comparaison avec les 186 positions, instantané)
+// Quel groupe ou quelle unité sous le doigt ? (positions déjà calculées pour ce zoom, instantané)
 function unitAt(pt) {
-  const z = map.getZoom(), sc = z < 7 ? 0.78 : 1;
+  const z = map.getZoom(), pl = placement(z), po = map.getPixelOrigin(), pp = map._getMapPanePos();
+  const toX = x => x - po.x + pp.x, toY = y => y - po.y + pp.y;
+  for (const g of pl.clusters) {
+    if (Math.abs(pt.x - toX(g.cx)) <= g.w / 2 + 4 && Math.abs(pt.y - toY(g.cy)) <= g.h / 2 + 4) return g;
+  }
   let best = null, bd = 1e9;
-  for (const u of shownSet) {
-    const p = map.latLngToContainerPoint([u.mlat, u.mlon]), cx = p.x + u.dx * sc, cy = p.y + u.dy * sc;
-    const ddx = Math.abs(pt.x - cx), ddy = Math.abs(pt.y - cy);
+  for (const { u, cx, cy, sc } of pl.units) {
+    const ddx = Math.abs(pt.x - toX(cx)), ddy = Math.abs(pt.y - toY(cy));
     // Zone de toucher un peu plus large que le symbole (doigt)
     if (ddx <= 19 * sc && ddy <= 14 * sc && ddx + ddy < bd) { bd = ddx + ddy; best = u; }
   }
   return best;
 }
-map.on("click", e => { const u = unitAt(e.containerPoint); if (u) openUnit(u); });
+map.on("click", e => {
+  const hit = unitAt(e.containerPoint);
+  if (!hit) return;
+  if (hit.members) {
+    // Groupe : on zoome dessus jusqu'à voir les unités une par une
+    const b = L.latLngBounds(hit.members.map(u => [u.mlat, u.mlon]));
+    map.flyToBounds(b, { padding: [60, 60], maxZoom: Math.max(CLUSTER_MAX + 1, map.getZoom() + 1), duration: 0.6 });
+  } else openUnit(hit);
+});
 let hoverRaf = 0;
 map.on("mousemove", e => {
   if (hoverRaf) return;
@@ -805,6 +816,32 @@ function textW(c) {
   }
   return (c.w = w + (c.dep ? 1.3 * c.n.length : 0));
 }
+// Regroupement des unités selon le zoom : quelques grands groupes vue France entière, puis de plus en plus fins.
+// On regroupe des garnisons (points), pas des unités : une garnison seule garde sa petite grille de symboles.
+const CLUSTER_MAX = 7;
+const clusterRadius = z => z <= 4 ? 80 : z === 5 ? 75 : z === 6 ? 50 : 34;
+function clusterize(z) {
+  const k = 2 ** z, R = clusterRadius(z), pts = new Map();
+  U.forEach(u => {
+    if (!shownSet.has(u)) return;
+    const key = u.mlat + "," + u.mlon;
+    let p = pts.get(key);
+    if (!p) pts.set(key, p = { x: u.X * k, y: u.Y * k, us: [] });
+    p.us.push(u);
+  });
+  const list = [...pts.values()];
+  // Les garnisons les plus entourées deviennent les centres de groupe en premier
+  list.forEach(p => p.nb = list.reduce((n, q) => n + (Math.hypot(p.x - q.x, p.y - q.y) <= R ? q.us.length : 0), 0));
+  list.sort((a, b) => b.nb - a.nb || a.x - b.x);
+  const groups = [];
+  for (const p of list) {
+    if (p.done) continue;
+    const g = list.filter(q => !q.done && Math.hypot(p.x - q.x, p.y - q.y) <= R);
+    g.forEach(q => q.done = true);
+    groups.push(g);
+  }
+  return groups;
+}
 let placeCache = {};
 function placement(z) {
   if (placeCache[z]) return placeCache[z];
@@ -813,9 +850,19 @@ function placement(z) {
   const hit = b => keys(b).some(k => (grid.get(k) || []).some(o => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0));
   const add = b => keys(b).forEach(k => { let g = grid.get(k); if (!g) grid.set(k, g = []); g.push(b); });
   // Obstacles : symboles et sigles des unités visibles
-  const sc = z < 7 ? 0.78 : 1;
+  const sc = z < 7 ? 0.78 : 1, clusters = [], solo = new Set(shownSet);
+  if (z <= CLUSTER_MAX) for (const g of clusterize(z)) {
+    if (g.length < 2) continue;
+    const members = g.flatMap(p => p.us), n = members.length;
+    const cx = g.reduce((s, p) => s + p.x * p.us.length, 0) / n, cy = g.reduce((s, p) => s + p.y * p.us.length, 0) / n;
+    const arms = {};
+    members.forEach(u => { arms[u.arme] = (arms[u.arme] || 0) + 1; solo.delete(u); });
+    const w = Math.max(32, String(n).length * 9 + 22), h = 26;
+    clusters.push({ cx, cy, n, members, arms, w, h });
+    add({ x0: cx - w / 2 - 2, x1: cx + w / 2 + 2, y0: cy - h / 2 - 2, y1: cy + h / 2 + 2 });
+  }
   U.forEach(u => {
-    if (!shownSet.has(u)) return;
+    if (!solo.has(u)) return;
     const k = 2 ** z, cx = u.X * k + u.dx * sc, cy = u.Y * k + u.dy * sc;
     units.push({ u, cx, cy, sc });
     add({ x0: cx - 16 * sc, x1: cx + 16 * sc, y0: cy - 11 * sc, y1: cy + 11 * sc });
@@ -850,6 +897,7 @@ function placement(z) {
     }
   });
   placed.units = units;
+  placed.clusters = clusters;
   return (placeCache[z] = placed);
 }
 const ULABEL_FONT = '700 12.5px "Saira Condensed", "Arial Narrow", sans-serif';
@@ -875,6 +923,28 @@ function drawLabels(ctx, coords) {
     ctx.font = cityFont(it.c);
     ctx.strokeStyle = halo; ctx.lineWidth = 3; ctx.strokeText(it.c.n, it.tx - ox, it.ty - oy);
     ctx.fillStyle = it.c.fr && it.c.pop >= 20000 ? ink : soft; ctx.fillText(it.c.n, it.tx - ox, it.ty - oy);
+  }
+  // Groupes : pastille avec le nombre d'unités et une barre aux couleurs des armes
+  const ARM_ORDER = Object.keys(ARMES);
+  for (const g of pl.clusters) {
+    const x = g.cx - g.w / 2 - ox, y = g.cy - g.h / 2 - oy;
+    if (x + g.w < -4 || x > sz + 4 || y + g.h < -4 || y > sz + 4) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, g.w, g.h, 6) : ctx.rect(x, y, g.w, g.h);
+    ctx.shadowColor = "rgba(0,0,0,.3)"; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1;
+    ctx.fillStyle = COL.ink; ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.clip();
+    let bx = x;
+    for (const a of ARM_ORDER) {
+      const c = g.arms[a]; if (!c) continue;
+      const bw = g.w * c / g.n;
+      ctx.fillStyle = COL["c-" + a]; ctx.fillRect(bx, y + g.h - 5, bw + 0.5, 5); bx += bw;
+    }
+    ctx.restore();
+    ctx.font = ULABEL_FONT; ctx.fillStyle = COL.panel; ctx.textAlign = "center";
+    ctx.fillText(String(g.n), x + g.w / 2, y + (g.h - 5) / 2 + 1);
+    ctx.textAlign = "start";
   }
   // Symboles d'unités, puis sigles (à partir du zoom 7)
   const big = coords.z >= 7;
