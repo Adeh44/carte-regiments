@@ -32,7 +32,7 @@ Réponses déduites du fil, à confirmer en quiz au prochain fil :
 2. Commit `vX.YY : description`, puis `git push origin main`. Lire la ligne `main -> main`.
 3. Vérifier le déploiement GitHub Pages : outil GitHub `actions_list` > `list_workflow_runs` (le site `adeh44.github.io` n'est pas joignable depuis le conteneur).
 
-Numérotation : v0.9 = fin du premier fil. C'est Adeh qui déclare la v1.0.
+Numérotation : v0.9 = fin du premier fil. Augmenter la constante `VERSION` du gabarit à chaque publication (affichée en bas de la carte). C'est Adeh qui déclare la v1.0.
 
 ## Pièges déjà payés
 

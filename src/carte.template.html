@@ -495,7 +495,9 @@ function visible(u) {
 const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 13, worldCopyJump: true, attributionControl: true, fadeAnimation: false });
 window.__map = map;
 map.attributionControl.setPrefix(false);
-map.attributionControl.addAttribution("Fonds : IGN (Admin Express via france-geojson), Natural Earth 1:10M, villes GeoNames");
+// Numéro de version affiché : à augmenter à chaque publication (sert à vérifier la version reçue sur le téléphone).
+const VERSION = "v0.12";
+map.attributionControl.addAttribution(VERSION + " · Fonds : IGN (Admin Express via france-geojson), Natural Earth 1:10M, villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
 // Couleurs du thème, lues une seule fois (getComputedStyle coûte cher sur petit téléphone).
