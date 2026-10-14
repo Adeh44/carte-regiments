@@ -5,6 +5,8 @@ on:
   push:
     branches: [fond-topo]
     paths: ['.github/workflows/mesure-fond.yml', 'src/outils/stats_mbtiles.py']
+permissions:
+  contents: write
 jobs:
   mesure:
     runs-on: ubuntu-latest
@@ -22,18 +24,22 @@ jobs:
           ls -la
       - name: Tuiles France z0-14 (sans bâtiments, adresses, points d'intérêt)
         run: |
+          mkdir -p mesure
+          set -o pipefail
           java -Xmx12g -jar planetiler.jar --osm-path=france.osm.pbf --output=france.mbtiles --download \
-            --maxzoom=14 --exclude-layers=building,housenumber,poi,aerodrome_label,aeroway,park,boundary \
-            --nodemap-type=array --storage=mmap 2>&1 | tail -40
+            --maxzoom=14 --exclude_layers=building,housenumber,poi,aerodrome_label,aeroway,park,boundary \
+            --nodemap-type=array --storage=mmap 2>&1 | tee mesure/planetiler.log | tail -40
           ls -la france.mbtiles
       - name: Statistiques par zoom et par couche
         run: |
           pip install mapbox-vector-tile==2.1.0 >/dev/null
-          python3 src/outils/stats_mbtiles.py france.mbtiles echantillon.mbtiles | tee stats.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mesure
-          path: |
-            stats.txt
-            echantillon.mbtiles
-          retention-days: 7
+          python3 src/outils/stats_mbtiles.py france.mbtiles mesure/echantillon.mbtiles | tee mesure/stats.txt
+      # Résultats poussés sur une branche à part (lisibles depuis Claude, qui n'accède pas aux journaux d'Actions)
+      - name: Publier les résultats
+        if: always()
+        run: |
+          mkdir -p mesure && (df -h / ; free -g) > mesure/machine.txt
+          [ -f mesure/planetiler.log ] && tail -300 mesure/planetiler.log > mesure/planetiler-fin.log && rm mesure/planetiler.log
+          cd mesure && git init -q && git checkout -q -b fond-topo-sorties
+          git add -A && git -c user.name=actions -c user.email=actions@github.com commit -qm "Mesure ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" fond-topo-sorties
