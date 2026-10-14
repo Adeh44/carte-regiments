@@ -1,6 +1,6 @@
 # REFERENCE — Carte des régiments
 
-Ce que le projet est. Mis à jour le 2026-10-14 (v0.10).
+Ce que le projet est. Mis à jour le 2026-10-14 (v0.14).
 
 ## Le produit
 
@@ -33,6 +33,22 @@ src/outils/               <- scripts de régénération des données + test hors
 docs/claude/              <- documents de suivi (ce dossier)
 build/                    <- sorties non versionnées (artifact, fichier hors ligne)
 ```
+
+## Fond topographique (v0.14)
+
+Fabriqué par GitHub Actions, jamais dans le conteneur Claude (qui ne peut pas télécharger OSM ni les altitudes) :
+- `.github/workflows/fond-topo.yml` (à la main, le 1er du mois, ou push touchant `src/carto/`) : Geofabrik France + 9 extraits
+  outre-mer/étranger -> Planetiler (schéma OpenMapTiles, z7-14, sans bâtiments/noms/POI) -> `carto topo` -> `o/` ;
+  tuiles d'altitude Terrarium (AWS) z10 -> `carto relief` -> `r/`. Résultat : `fond.tar` dans la release « fond ».
+- `.github/workflows/site.yml` (push sur main, après le fond, ou à la main) : `build.py` + `fond.tar` -> publication Pages.
+- Résumés lisibles par Claude : branche `fond-topo-sorties` (`git show origin/fond-topo-sorties:topo.txt`).
+  Les journaux d'Actions et `gh release download` sont bloqués depuis le conteneur ; télécharger `fond.tar` par l'API :
+  `curl -L -H "Authorization: token $(gh auth token)" -H "Accept: application/octet-stream" https://api.github.com/repos/Adeh44/carte-regiments/releases/assets/<id>`.
+- Poids (14/10/2026) : o/ 706 Mo, r/ 33 Mo. Limite GitHub Pages : 1 Go.
+- Tri des données (src/carto/src/topo.rs, `classify`) : forêts, zones humides, roches, glaciers, sable, zones bâties, industrielles,
+  militaires, eaux ; routes par classe ; petites rues dès z13 ; voies de service et sentiers à z14 seulement ;
+  supprimés : prairies, cultures, piscines, trottoirs, allées de parking, tunnels, noms.
+- Page : 3 sources (`BASE`, `TOPO`, `RELIEF`) ; ordre de dessin dans `drawMap` ; styles dans `layerStyle` ; couleurs = jetons CSS.
 
 ## Fabriquer et publier
 

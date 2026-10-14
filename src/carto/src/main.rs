@@ -11,6 +11,9 @@
 //! Usage : carto <src/geo> <dossier_sortie> <gabarit.html>
 //! (src/geo contient zones, routes et villes ; src/geo/sources les fonds IGN et Natural Earth téléchargés par build.py)
 
+mod relief;
+mod topo;
+
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
@@ -347,6 +350,12 @@ fn quant(p: &[[f64; 2]], ox: f64, oy: f64) -> Vec<[i32; 2]> {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    match args.get(1).map(|a| a.as_str()) {
+        Some("topo") => return topo::run(&args[2..]),
+        Some("relief") => return relief::run(&args[2..]),
+        Some("relief-liste") => return relief::liste(&args[2..]),
+        _ => {}
+    }
     let src = Path::new(args.get(1).expect("dossier src/geo"));
     let big = src.join("sources");
     let out = Path::new(args.get(2).expect("dossier sortie"));

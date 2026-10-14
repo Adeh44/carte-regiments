@@ -1,0 +1,45 @@
+# Publie le site : la carte (fabriquée par src/build.py) + le fond topographique de la release « fond ».
+# Se lance à chaque push sur main, après chaque fabrication du fond, ou à la main.
+# Réglage requis une fois : Settings > Pages > Source = « GitHub Actions ».
+name: Site
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Fond topographique"]
+    types: [completed]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency: { group: pages, cancel-in-progress: false }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: main }
+      - name: Fond topographique (release « fond »)
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          if gh release download fond -p fond.tar -R "$GITHUB_REPOSITORY"; then tar -xf fond.tar && rm fond.tar && du -sh o r
+          else echo "Pas encore de fond topo : la carte sort avec le fond général seul."; fi
+      - name: Fabriquer la carte
+        run: python3 src/build.py
+      - name: Assembler
+        run: |
+          mkdir -p _site
+          cp index.html sw.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png _site/
+          cp -r t _site/
+          [ -d o ] && mv o _site/ ; [ -d r ] && mv r _site/
+          du -sh _site
+      - uses: actions/upload-pages-artifact@v4
+        with: { path: _site }
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4

@@ -30,7 +30,8 @@ Réponses déduites du fil, à confirmer en quiz au prochain fil :
 
 1. `git status` et `git diff --stat`, lus.
 2. Commit `vX.YY : description`, puis `git push origin main`. Lire la ligne `main -> main`.
-3. Vérifier le déploiement GitHub Pages : outil GitHub `actions_list` > `list_workflow_runs` (le site `adeh44.github.io` n'est pas joignable depuis le conteneur).
+3. Vérifier le déploiement : `gh run list -R Adeh44/carte-regiments -L 3` (workflow « Site »). Le site `adeh44.github.io` n'est pas joignable depuis le conteneur.
+4. Le fond topo se refait avec le workflow « Fond topographique » (~45 min, gratuit). Ne pas le relancer pour un simple changement de la page.
 
 Numérotation : v0.9 = fin du premier fil. Augmenter la constante `VERSION` du gabarit à chaque publication (affichée en bas de la carte). C'est Adeh qui déclare la v1.0.
 
@@ -52,5 +53,7 @@ Numérotation : v0.9 = fin du premier fil. Augmenter la constante `VERSION` du g
 | Symboles absents malgré la règle CSS | Le `<style>` de la page vient après celui injecté : `.sym` écrasait `.s-inf` | Sélecteur `.sym.s-xxx`. |
 | Morceaux de carte mélangés après des zooms rapides | Canvas recyclé alors qu'un dessin en attente le visait encore | Jeton `_key` par tuile, vérifié avant de dessiner. |
 | Ancienne version affichée en 4G faible | Page « réseau d'abord » avec repli sur la copie après 4 s | Copie locale d'abord + rechargement auto quand le nouveau service worker prend la main. |
+| Planetiler refuse de démarrer (93 Go demandés) | `--nodemap-type=array` réserve la place de tous les points d'OSM | `sparsearray`. |
+| Rendu topo lent (traits) | Angles arrondis sur des milliers de petits traits | Arrondis seulement si épaisseur >= 3,5 px (`strokeLayer`). |
 | Publication refusée sur l'artifact | Type `.bin` non servi | Tuiles en `.wasm`. |
 | Données fausses publiées (2e RG dissous en 2010, DLEM devenu 5e RE…) | Données tirées de mémoire ou de Wikipédia | Vérifier chaque unité sur sengager.fr avant ajout. |

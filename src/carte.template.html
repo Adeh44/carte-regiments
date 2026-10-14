@@ -25,6 +25,8 @@
   --c-trs: #6b4ea2; --c-trn: #2b7a4b; --c-mat: #5d7385; --c-alat: #0f8d9a;
   --c-sou: #b8417f; --c-sma: #8a6a12; --c-ia: #8d5a2b;
   --river: #7fa6c2; --road: #d49a5c; --road2: #cbb894; --city: #6d7363; --city-soft: #8d9283; --city-halo: #f3f2e6;
+  --forest: #cfe2b1; --wetland: #d9e8e2; --rock: #e4e0d8; --ice: #f1f7fb; --sand: #f2e8c6; --urban: #ebe3d9; --indus: #e1dcd7; --military: #f2cfc5; --water: #c6d4d6;
+  --motorway: #e3534a; --trunk: #ee8a3c; --primary: #f4b245; --secondary: #f8d765; --tertiary: #fcf0a8; --minor: #ffffff; --casing: #9a8f7c; --track: #93734c; --path: #5d5246; --rail: #5f5f5f;
   --f-display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -37,6 +39,8 @@
   --c-trs: #a98ae0; --c-trn: #55b67b; --c-mat: #93a9bb; --c-alat: #3fc3cf;
   --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62;
   --river: #3f6f8c; --road: #8f6a42; --road2: #574f40; --city: #a4ab98; --city-soft: #7f8775; --city-halo: #2c3530;
+  --forest: #23382a; --wetland: #22332f; --rock: #353633; --ice: #3b4247; --sand: #3a3527; --urban: #333a35; --indus: #353836; --military: #4a2f2c; --water: #0f1517;
+  --motorway: #c4483f; --trunk: #c27236; --primary: #b38a3a; --secondary: #8f7d45; --tertiary: #6d6648; --minor: #565c57; --casing: #1a1f1c; --track: #8a7253; --path: #a3988a; --rail: #8d918b;
   color-scheme: dark;
 } }
 :root[data-theme="dark"] {
@@ -47,6 +51,8 @@
   --c-trs: #a98ae0; --c-trn: #55b67b; --c-mat: #93a9bb; --c-alat: #3fc3cf;
   --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62;
   --river: #3f6f8c; --road: #8f6a42; --road2: #574f40; --city: #a4ab98; --city-soft: #7f8775; --city-halo: #2c3530;
+  --forest: #23382a; --wetland: #22332f; --rock: #353633; --ice: #3b4247; --sand: #3a3527; --urban: #333a35; --indus: #353836; --military: #4a2f2c; --water: #0f1517;
+  --motorway: #c4483f; --trunk: #c27236; --primary: #b38a3a; --secondary: #8f7d45; --tertiary: #6d6648; --minor: #565c57; --casing: #1a1f1c; --track: #8a7253; --path: #a3988a; --rail: #8d918b;
   color-scheme: dark;
 }
 html, body { height: 100%; }
@@ -492,12 +498,12 @@ function visible(u) {
 }
 
 // Carte
-const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 13, worldCopyJump: true, attributionControl: true, fadeAnimation: false });
+const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 16, worldCopyJump: true, attributionControl: true, fadeAnimation: false });
 window.__map = map;
 map.attributionControl.setPrefix(false);
 // Numéro de version affiché : à augmenter à chaque publication (sert à vérifier la version reçue sur le téléphone).
-const VERSION = "v0.13";
-map.attributionControl.addAttribution(VERSION + " · Fonds : IGN (Admin Express via france-geojson), Natural Earth 1:10M, villes GeoNames");
+const VERSION = "v0.14";
+map.attributionControl.addAttribution(VERSION + " · © contributeurs OpenStreetMap, OpenMapTiles · IGN (Admin Express) · Natural Earth · relief : AWS Terrain Tiles · villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
 // Couleurs du thème, lues une seule fois (getComputedStyle coûte cher sur petit téléphone).
@@ -505,6 +511,7 @@ const COL = {};
 function readColors() {
   const cs = getComputedStyle(document.documentElement);
   ["ink", "sea", "land", "france", "dep-line", "reg-line", "accent", "river", "road", "road2", "city", "city-soft", "city-halo", "ink-soft", "panel", "paper",
+   "forest", "wetland", "rock", "ice", "sand", "urban", "indus", "military", "water", "motorway", "trunk", "primary", "secondary", "tertiary", "minor", "casing", "track", "path", "rail",
    ...Object.keys(ARMES).map(a => "c-" + a)].forEach(n => COL[n] = cs.getPropertyValue("--" + n).trim());
 }
 readColors();
@@ -512,88 +519,193 @@ readColors();
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
 // ---------- Fond de carte en tuiles vectorielles (préparées par l'outil Rust "carto") ----------
-const BUNDLES = new Set(META.bundles), EXT = META.ext, ZMAX = META.zmax, ZWORLD = 5;
-const groupZ = z => z <= META.zgroup ? 0 : Math.max(META.zgroup, z - META.gdepth);
-const bundleCache = new Map();
-function loadBundle(name) {
-  let p = bundleCache.get(name);
-  if (!p) {
-    // Fichier hors ligne : paquets embarqués en base64 (fetch ne marche pas en file://)
-    const inl = window.TILES_INLINE && window.TILES_INLINE[name];
-    const get = inl ? Promise.resolve(Uint8Array.from(atob(inl), ch => ch.charCodeAt(0)).buffer)
-      : fetch("t/" + name + ".wasm").then(r => r.ok ? r.arrayBuffer() : Promise.reject());
-    p = get.then(ab => {
-      const u = new Uint8Array(ab); let i = 0;
-      const rd = () => { let v = 0, s = 1, b; do { b = u[i++]; v += (b & 127) * s; s *= 128; } while (b & 128); return v; };
-      const n = rd(), idx = new Array(n);
-      for (let k = 0; k < n; k++) idx[k] = [rd(), rd(), rd()];
-      const tiles = new Map(); let off = i;
-      for (const [dx, dy, len] of idx) { tiles.set(dx * 65536 + dy, off); off += len; }
-      return { u, tiles };
-    }).catch(() => null);
-    bundleCache.set(name, p);
-  }
-  return p;
+// Trois sources : le fond général (t/, monde + départements), le fond topographique OSM (o/, France
+// jusqu'au zoom 14, paquets compressés) et le relief (r/, images d'ombrage jusqu'au zoom 11).
+// Au-delà de leur zoom maximal, chaque source agrandit les tuiles d'un niveau inférieur.
+const EXT = META.ext, ZWORLD = 5;
+const lire = u => { let i = 0; return { u, get i() { return i; }, set i(v) { i = v; }, rd() { let v = 0, s = 1, b; do { b = u[i++]; v += (b & 127) * s; s *= 128; } while (b & 128); return v; } }; };
+function parseBundle(ab) {
+  const r = lire(new Uint8Array(ab));
+  const n = r.rd(), idx = new Array(n);
+  for (let k = 0; k < n; k++) idx[k] = [r.rd(), r.rd(), r.rd()];
+  const tiles = new Map(); let off = r.i;
+  for (const [dx, dy, len] of idx) { tiles.set(dx * 65536 + dy, [off, len]); off += len; }
+  return { u: r.u, tiles };
 }
-// Trouve les données d'une tuile ; à défaut (hors zone détaillée ou au-delà de z10), celles d'un ancêtre agrandi.
-async function findTile(z, x, y) {
-  for (let zz = Math.min(z, ZMAX); zz >= 2; zz--) {
-    const s = z - zz, ax = x >> s, ay = y >> s, sh = zz - groupZ(zz), gx = ax >> sh, gy = ay >> sh;
+const gunzip = ab => new Response(new Blob([ab]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+function source(dir, opts) {
+  const cache = new Map();
+  const src = { dir, ...opts, load(name) {
+    let p = cache.get(name);
+    if (!p) {
+      // Fichier hors ligne : paquets du fond général embarqués en base64 (fetch ne marche pas en file://)
+      const inl = dir === "t/" && window.TILES_INLINE && window.TILES_INLINE[name];
+      const get = inl ? Promise.resolve(Uint8Array.from(atob(inl), ch => ch.charCodeAt(0)).buffer)
+        : fetch(dir + name + ".wasm").then(r => r.ok ? r.arrayBuffer() : Promise.reject());
+      p = get.then(ab => src.gz ? gunzip(ab) : ab).then(parseBundle).catch(() => null);
+      cache.set(name, p);
+    }
+    return p;
+  } };
+  return src;
+}
+const BASE = source("t/", { zmin: 2, zmax: META.zmax, groupZ: z => z <= META.zgroup ? 0 : Math.max(META.zgroup, z - META.gdepth), has: (z, n) => BUNDLES.has(n) });
+const BUNDLES = new Set(META.bundles);
+// Index des sources optionnelles : chargés une fois ; absents (artifact, fichier hors ligne) = source ignorée
+function indexed(dir, gz) {
+  const s = source(dir, { gz, zmin: 99, zmax: 0, groupZ: z => Math.max(0, z - 3), set: new Set() });
+  s.ready = fetch(dir + "index.json").then(r => r.ok ? r.json() : Promise.reject()).then(ix => {
+    s.zmin = ix.zmin; s.zmax = ix.zmax; s.ext = ix.ext;
+    for (const [z, list] of Object.entries(ix.groups)) for (const [gx, gy] of list) s.set.add(z + "_" + gx + "_" + gy);
+  }).catch(() => {});
+  s.has = (z, n) => s.set.has(n);
+  return s;
+}
+const TOPO = indexed("o/", true), RELIEF = indexed("r/", false);
+// Trouve les données d'une tuile, ou celles de l'ancêtre le plus proche (agrandi).
+async function findTile(src, z, x, y) {
+  if (src.ready) await src.ready;
+  for (let zz = Math.min(z, src.zmax); zz >= src.zmin; zz--) {
+    const s = z - zz, ax = x >> s, ay = y >> s, sh = zz - src.groupZ(zz), gx = ax >> sh, gy = ay >> sh;
     const name = zz + "_" + gx + "_" + gy;
-    if (!BUNDLES.has(name)) { if (zz <= ZWORLD) return null; continue; }
-    const b = await loadBundle(name);
+    if (!src.has(zz, name)) { if (src === BASE && zz <= ZWORLD) return null; continue; }
+    const b = await src.load(name);
     if (!b) continue;
-    const off = b.tiles.get((ax - (gx << sh)) * 65536 + (ay - (gy << sh)));
-    if (off !== undefined) return { u: b.u, off, s: 1 << s, ax, ay };
-    if (zz <= ZWORLD) return null;
+    const e = b.tiles.get((ax - (gx << sh)) * 65536 + (ay - (gy << sh)));
+    if (e) return { u: b.u, off: e[0], len: e[1], s: 1 << s, ax, ay, z: zz };
+    if (src === BASE && zz <= ZWORLD) return null;
   }
   return null;
 }
-// Style des couches selon le zoom affiché. f = remplissage, s = trait, w = épaisseur, a = opacité.
+// Décode une tuile en un tracé (Path2D) par couche, déjà à l'échelle de l'écran.
+const FILLS = new Set([0, 1, 3, 5, 6, 7, 10, 20, 21, 22, 23, 24, 25, 26, 27, 30]);
+function decodeTile(t, ext, x, y) {
+  const r = lire(t.u); r.i = t.off;
+  const k = t.s * 256 / ext, ox = -(x - t.ax * t.s) * 256, oy = -(y - t.ay * t.s) * 256;
+  let px = 0, py = 0;
+  const out = new Map(), nl = r.rd();
+  for (let l = 0; l < nl; l++) {
+    const id = t.u[r.i++], np = r.rd(), fill = FILLS.has(id), p2 = new Path2D();
+    for (let p = 0; p < np; p++) {
+      const n = r.rd();
+      for (let q = 0; q < n; q++) {
+        const dx = r.rd(), dy = r.rd();
+        px += dx & 1 ? -(dx + 1) / 2 : dx / 2;
+        py += dy & 1 ? -(dy + 1) / 2 : dy / 2;
+        q ? p2.lineTo(px * k + ox, py * k + oy) : p2.moveTo(px * k + ox, py * k + oy);
+      }
+      if (fill) p2.closePath();
+    }
+    out.set(id, p2);
+  }
+  return out;
+}
+// Épaisseur des traits : valeurs du zoom 14, réduites de 30 % par cran en dessous, élargies au-delà.
+const wz = (w14, z) => w14 * Math.pow(z <= 14 ? 0.7 : 1.35, Math.abs(14 - z));
+// Style des couches selon le zoom affiché. f = remplissage, s = trait, w = épaisseur, d = pointillés,
+// c = liseré (trait plus large dessous), a = opacité.
 function layerStyle(id, z) {
   switch (id) {
-    case 0: return { f: COL.land, s: COL["dep-line"], w: 0.8 };
-    case 1: return { f: COL.france, s: COL["dep-line"], w: 0.8 };
-    case 3: return { f: COL.france, s: COL["dep-line"], w: z >= 8 ? 0.9 : 0.7 };
+    // Fond général
+    case 0: return { f: COL.land };
+    case 1: return { f: COL.france };
+    case 3: return { f: COL.france };
     case 5: return { f: COL.sea };
     case 6: return { f: COL.france };
     case 7: return { f: COL.land };
+    case 10: return { f: COL.sea };
     case 8: return { s: COL["dep-line"], w: 0.8 };
     case 9: return { s: COL["dep-line"], w: 0.8, d: [4, 3] };
-    case 10: return { f: COL.sea };
     case 11: return { s: COL.road2, w: z >= 9 ? 1.6 : 1, a: 0.6 };
     case 12: return { s: COL.road, w: z >= 9 ? 2.6 : z >= 7 ? 2 : 1.4, a: 0.55 };
     case 13: return { s: COL.river, w: z >= 9 ? 1.6 : z >= 7 ? 1.1 : 0.8 };
     case 14: return { s: COL.river, w: z >= 9 ? 2.4 : z >= 7 ? 1.7 : 1.2 };
-    case 15: return { s: COL["reg-line"], w: z >= 8 ? 1.8 : 1.4 };
+    case 15: return { s: COL["reg-line"], w: z >= 8 ? 1.8 : 1.4, d: z >= 9 ? [8, 4] : null };
+    // Fond topographique
+    case 20: return { f: COL.forest };
+    case 21: return { f: COL.wetland };
+    case 22: return { f: COL.rock };
+    case 23: return { f: COL.ice };
+    case 24: return { f: COL.sand };
+    case 25: return { f: COL.urban };
+    case 26: return { f: COL.indus };
+    case 27: return { f: COL.military, a: 0.7 };
+    case 30: return { f: COL.water };
+    case 31: return { s: COL.river, w: Math.max(0.8, wz(3.2, z)) };
+    case 32: return { s: COL.river, w: wz(1.3, z) };
+    case 40: return { s: COL.motorway, c: COL.casing, w: Math.max(1.4, wz(7, z)) };
+    case 41: return { s: COL.trunk, c: COL.casing, w: Math.max(1.2, wz(6, z)) };
+    case 42: return { s: COL.primary, c: COL.casing, w: Math.max(1, wz(5.5, z)) };
+    case 43: return { s: COL.secondary, c: COL.casing, w: Math.max(0.9, wz(4.8, z)) };
+    case 44: return { s: COL.tertiary, c: COL.casing, w: Math.max(0.8, wz(4.2, z)) };
+    case 45: return { s: COL.minor, c: COL.casing, w: Math.max(0.8, wz(3.2, z)) };
+    case 46: return { s: COL.minor, c: COL.casing, w: wz(2, z) };
+    case 47: return { s: COL.track, w: Math.max(0.7, wz(1.4, z)), d: [5, 3] };
+    case 48: return { s: COL.path, w: Math.max(0.7, wz(1.1, z)), d: [3, 3] };
+    case 49: return { s: COL.rail, w: Math.max(0.9, wz(2.2, z)), r: z >= 11 };
   }
   return null;
 }
-function drawTile(ctx, t, z, x, y) {
-  const u = t.u; let i = t.off;
-  const rd = () => { let v = 0, s = 1, b; do { b = u[i++]; v += (b & 127) * s; s *= 128; } while (b & 128); return v; };
-  const k = t.s * 256 / EXT, ox = -(x - t.ax * t.s) * 256, oy = -(y - t.ay * t.s) * 256;
-  let px = 0, py = 0;
-  const nl = rd();
-  ctx.lineJoin = "round"; ctx.lineCap = "round";
-  for (let l = 0; l < nl; l++) {
-    const id = u[i++], np = rd(), st = layerStyle(id, z);
-    ctx.beginPath();
-    for (let p = 0; p < np; p++) {
-      const n = rd();
-      for (let q = 0; q < n; q++) {
-        const dx = rd(), dy = rd();
-        px += dx & 1 ? -(dx + 1) / 2 : dx / 2;
-        py += dy & 1 ? -(dy + 1) / 2 : dy / 2;
-        q ? ctx.lineTo(px * k + ox, py * k + oy) : ctx.moveTo(px * k + ox, py * k + oy);
-      }
-      if (st && st.f) ctx.closePath();
-    }
+// Ordre de dessin des lignes : les petites voies sous les grandes
+const TOPO_LINES = [32, 31, 48, 47, 46, 45, 49, 44, 43, 42, 41, 40];
+const ROADS_CASED = [46, 45, 44, 43, 42, 41, 40];
+function fillLayers(ctx, paths, ids, z) {
+  for (const id of ids) {
+    const p = paths.get(id), st = p && layerStyle(id, z);
     if (!st) continue;
-    ctx.globalAlpha = st.a || 1;
-    if (st.f) { ctx.fillStyle = st.f; ctx.fill("evenodd"); }
-    if (st.s) { ctx.strokeStyle = st.s; ctx.lineWidth = st.w; ctx.setLineDash(st.d || []); ctx.stroke(); }
+    ctx.globalAlpha = st.a || 1; ctx.fillStyle = st.f; ctx.fill(p, "evenodd");
   }
+  ctx.globalAlpha = 1;
+}
+function strokeLayer(ctx, p, st) {
+  // Angles et bouts arrondis seulement sur les traits épais (où ça se voit) : 3 fois moins cher sur petit téléphone
+  const round = st.w >= 3.5;
+  ctx.lineJoin = round ? "round" : "bevel"; ctx.lineCap = round ? "round" : "butt";
+  ctx.globalAlpha = st.a || 1; ctx.strokeStyle = st.s; ctx.lineWidth = st.w; ctx.setLineDash(st.d || []); ctx.stroke(p);
+}
+function drawRelief(ctx, rel, x, y, zoomRel) {
+  if (!rel) return Promise.resolve();
+  return createImageBitmap(new Blob([rel.u.subarray(rel.off, rel.off + rel.len)])).then(img => () => {
+    // Tuile d'un zoom inférieur : on n'en prend que la partie qui couvre cette tuile, agrandie en douceur
+    const n = img.width / rel.s, sx = (x - rel.ax * rel.s) * n, sy = (y - rel.ay * rel.s) * n;
+    // Ombrage plus discret en vue lointaine (sinon les massifs écrasent tout le reste)
+    ctx.save(); ctx.globalCompositeOperation = "multiply"; ctx.imageSmoothingQuality = "high";
+    ctx.globalAlpha = zoomRel <= 8 ? 0.5 : zoomRel <= 10 ? 0.62 : 0.75;
+    ctx.drawImage(img, sx, sy, n, n, 0, 0, 256, 256);
+    ctx.restore(); img.close();
+  });
+}
+function drawMap(ctx, c, base, topo, relImg) {
+  const z = c.z;
+  const bp = base ? decodeTile(base, EXT, c.x, c.y) : new Map();
+  const tp = topo ? decodeTile(topo, TOPO.ext || 2048, c.x, c.y) : new Map();
+  // 1. Terres, France, mer
+  fillLayers(ctx, bp, [0, 1, 3, 5, 6, 7], z);
+  if (!tp.has(30)) fillLayers(ctx, bp, [10], z);
+  // 2. Occupation du sol (OSM) : villes, zones militaires, forêts, roches, glaciers, eaux
+  fillLayers(ctx, tp, [25, 26, 27, 24, 21, 22, 23, 20, 30], z);
+  // 3. Relief : ombrage posé « en produit » (seules les ombres assombrissent)
+  if (relImg) relImg();
+  // 4. Limites (départements, côtes outre-mer) puis réseaux
+  if (bp.get(3)) strokeLayer(ctx, bp.get(3), { s: COL["dep-line"], w: z >= 8 ? 1 : 0.7, d: z >= 9 ? [6, 3] : null });
+  for (const id of [0, 1]) if (bp.get(id)) strokeLayer(ctx, bp.get(id), { s: COL["dep-line"], w: 0.8 });
+  for (const id of [8, 9]) { const p = bp.get(id), st = p && layerStyle(id, z); if (st) strokeLayer(ctx, p, st); }
+  // Rivières et routes du fond général seulement là où OSM ne les fournit pas
+  if (!tp.has(31)) for (const id of [13, 14]) { const p = bp.get(id), st = p && layerStyle(id, z); if (st) strokeLayer(ctx, p, st); }
+  if (!(tp.has(40) || tp.has(41) || tp.has(42))) for (const id of [11, 12]) { const p = bp.get(id), st = p && layerStyle(id, z); if (st) strokeLayer(ctx, p, st); }
+  // Liserés des routes (dessous), puis routes
+  for (const id of ROADS_CASED) {
+    const p = tp.get(id), st = p && layerStyle(id, z);
+    if (st && st.c && st.w >= 1.6) strokeLayer(ctx, p, { s: st.c, w: st.w + 1.6 });
+  }
+  for (const id of TOPO_LINES) {
+    const p = tp.get(id), st = p && layerStyle(id, z);
+    if (!st) continue;
+    strokeLayer(ctx, p, st);
+    // Voie ferrée : traverses claires en pointillés
+    if (st.r) strokeLayer(ctx, p, { s: COL.paper, w: st.w * 0.45, d: [6, 6] });
+  }
+  { const p = bp.get(15), st = p && layerStyle(15, z); if (st) strokeLayer(ctx, p, st); }
   ctx.globalAlpha = 1; ctx.setLineDash([]);
 }
 // Un seul canvas par tuile : fond, noms de lieux et symboles d'unités.
@@ -619,13 +731,14 @@ const MapLayer = L.GridLayer.extend({
     // Jeton : si la tuile est abandonnée (zoom rapide) puis son canvas réutilisé ailleurs,
     // l'ancien dessin en attente ne doit jamais s'y peindre (sinon morceaux de carte mélangés).
     const key = t._key = ++tileSeq;
-    Promise.all([findTile(c.z, c.x, c.y), spritesReady, fontsReady]).then(([d]) => schedule(() => {
+    const ctx = t.getContext("2d");
+    const rel = c.z >= 5 ? findTile(RELIEF, c.z, c.x, c.y).then(r => drawRelief(ctx, r, c.x, c.y, c.z)).catch(() => null) : null;
+    Promise.all([findTile(BASE, c.z, c.x, c.y), c.z >= 7 ? findTile(TOPO, c.z, c.x, c.y) : null, rel, spritesReady, fontsReady]).then(([b, o, r]) => schedule(() => {
       if (t._key !== key) return;
       // Niveau de zoom déjà quitté : inutile de dessiner, on libère la file pour le niveau affiché.
       if (c.z !== (map._animatingZoom ? map._animateToZoom : map.getZoom())) { done(null, t); return; }
-      const ctx = t.getContext("2d");
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, 256, 256);
-      if (d) drawTile(ctx, d, c.z, c.x, c.y);
+      drawMap(ctx, c, b, o, r);
       drawLabels(ctx, c);
       done(null, t);
     }));
