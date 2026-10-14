@@ -4,7 +4,8 @@ Réécrit en entier le 2026-10-14.
 
 ## État réel
 
-- Version : **v0.12** (numéro affiché en bas de la carte) (fond Rust en tuiles, optimisation mobile, correctif zooms rapides et mises à jour), poussée sur `main` de `Adeh44/carte-regiments`.
+- Version : **v0.13** (unités regroupées selon le zoom ; numéro affiché en bas de la carte)
+- Chantier en cours sur la branche `fond-topo` : vrai fond topographique (OSM + relief), phase 0 = mesure du poids. (fond Rust en tuiles, optimisation mobile, correctif zooms rapides et mises à jour), poussée sur `main` de `Adeh44/carte-regiments`.
 - Site public : https://adeh44.github.io/carte-regiments/ — artifact privé : https://claude.ai/artifact/UbpoP14fi3tASNN2s3XXWu
 - Contenu inchangé : 186 unités + 11 camps.
 - Non vérifié : fluidité sur le Xiaomi Note 14 d'Adeh, mode avion sur iPhone avec les nouvelles tuiles.

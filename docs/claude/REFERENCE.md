@@ -79,6 +79,7 @@ Les camps sont dans le tableau `CAMPS` : [nom, lat, lon, surface en hectares].
   Tuiles détaillées seulement autour de la métropole et des zones d'outre-mer ; ailleurs, le zoom 5 agrandi.
 - Unités, sigles, villes et noms de départements dessinés dans le même canvas que le fond (plus de marqueurs HTML) :
   le clic est détecté par position. Les tuiles se dessinent par tranches de 8 ms pour garder le doigt fluide.
+- Unités regroupées jusqu'au zoom 7 (v0.13) : pastille avec le nombre et une barre aux couleurs des armes ; toucher = zoom dessus. Regroupement par garnisons, rayon selon le zoom (`clusterRadius`), recalculé avec les filtres.
 - Extension .wasm pour les tuiles : seul type binaire accepté par l'hébergement des artifacts.
 - Téléphone de référence pour les performances : Xiaomi Note 14 entrée de gamme d'Adeh.
 
