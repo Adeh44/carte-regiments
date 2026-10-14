@@ -1,5 +1,5 @@
-// Version : 26ac01898a
-const CACHE = "regiments-26ac01898a";
+// Version : 3395c287cb
+const CACHE = "regiments-3395c287cb";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png",
   "t/2_0_0.wasm", "t/3_0_0.wasm", "t/4_3_2.wasm", "t/4_3_3.wasm", "t/4_4_2.wasm", "t/4_4_3.wasm", "t/5_3_2.wasm", "t/5_3_3.wasm", "t/5_4_2.wasm", "t/5_4_3.wasm", "t/6_3_2.wasm", "t/6_3_3.wasm", "t/6_4_2.wasm", "t/6_4_3.wasm"];
 

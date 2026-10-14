@@ -1344,6 +1344,9 @@ function fillLayers(ctx, paths, ids, z) {
   ctx.globalAlpha = 1;
 }
 function strokeLayer(ctx, p, st) {
+  // Angles et bouts arrondis seulement sur les traits épais (où ça se voit) : 3 fois moins cher sur petit téléphone
+  const round = st.w >= 3.5;
+  ctx.lineJoin = round ? "round" : "bevel"; ctx.lineCap = round ? "round" : "butt";
   ctx.globalAlpha = st.a || 1; ctx.strokeStyle = st.s; ctx.lineWidth = st.w; ctx.setLineDash(st.d || []); ctx.stroke(p);
 }
 function drawRelief(ctx, rel, x, y) {
@@ -1358,7 +1361,6 @@ function drawRelief(ctx, rel, x, y) {
 }
 function drawMap(ctx, c, base, topo, relImg) {
   const z = c.z;
-  ctx.lineJoin = "round"; ctx.lineCap = "round";
   const bp = base ? decodeTile(base, EXT, c.x, c.y) : new Map();
   const tp = topo ? decodeTile(topo, TOPO.ext || 2048, c.x, c.y) : new Map();
   // 1. Terres, France, mer
