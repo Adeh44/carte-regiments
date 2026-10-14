@@ -1300,7 +1300,13 @@ const MapLayer = L.GridLayer.extend({
     // Canvas recyclés : allouer une image de 512x512 à chaque tuile coûte plus que la dessiner
     const t = pool.pop() || document.createElement("canvas");
     if (t.width !== 256 * DPR) t.width = t.height = 256 * DPR;
+    // Jeton : si la tuile est abandonnée (zoom rapide) puis son canvas réutilisé ailleurs,
+    // l'ancien dessin en attente ne doit jamais s'y peindre (sinon morceaux de carte mélangés).
+    const key = t._key = ++tileSeq;
     Promise.all([findTile(c.z, c.x, c.y), spritesReady, fontsReady]).then(([d]) => schedule(() => {
+      if (t._key !== key) return;
+      // Niveau de zoom déjà quitté : inutile de dessiner, on libère la file pour le niveau affiché.
+      if (c.z !== (map._animatingZoom ? map._animateToZoom : map.getZoom())) { done(null, t); return; }
       const ctx = t.getContext("2d");
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, 256, 256);
       if (d) drawTile(ctx, d, c.z, c.x, c.y);
@@ -1574,8 +1580,9 @@ function drawLabels(ctx, coords) {
   ctx.letterSpacing = "0px";
 }
 const pool = [];
+let tileSeq = 0;
 const mapLayer = new MapLayer({ updateWhenZooming: false, updateWhenIdle: true, keepBuffer: 2 }).addTo(map);
-mapLayer.on("tileunload", e => { if (pool.length < 48) pool.push(e.tile); });
+mapLayer.on("tileunload", e => { e.tile._key = 0; if (pool.length < 48) pool.push(e.tile); });
 function resetCities() { placeCache = {}; mapLayer.redraw(); }
 // Polices arrivées après le délai : un seul redessin, avec les bonnes largeurs.
 let fontsLate = false;
@@ -1704,6 +1711,16 @@ render();
 // Mode hors ligne : le service worker garde une copie de la carte sur l'appareil.
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
+  // Nouvelle version installée en arrière-plan : on recharge tout de suite si la page vient de s'ouvrir,
+  // sinon au prochain retour sur l'appli (jamais en plein milieu d'une manipulation).
+  const hadCtrl = !!navigator.serviceWorker.controller, t0 = Date.now();
+  let pending = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadCtrl || pending) return;
+    pending = true;
+    if (Date.now() - t0 < 15000) location.reload();
+  });
+  document.addEventListener("visibilitychange", () => { if (pending && document.visibilityState === "visible") location.reload(); });
 }
 </script>
 </body>

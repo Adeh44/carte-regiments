@@ -76,6 +76,16 @@ sw = '''<script>
 // Mode hors ligne : le service worker garde une copie de la carte sur l'appareil.
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
+  // Nouvelle version installée en arrière-plan : on recharge tout de suite si la page vient de s'ouvrir,
+  // sinon au prochain retour sur l'appli (jamais en plein milieu d'une manipulation).
+  const hadCtrl = !!navigator.serviceWorker.controller, t0 = Date.now();
+  let pending = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadCtrl || pending) return;
+    pending = true;
+    if (Date.now() - t0 < 15000) location.reload();
+  });
+  document.addEventListener("visibilitychange", () => { if (pending && document.visibilityState === "visible") location.reload(); });
 }
 </script>
 </body>'''
@@ -127,12 +137,12 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  // La page : réseau d'abord (pour recevoir les mises à jour), copie locale si pas de réseau.
+  // La page : copie locale tout de suite (ouverture instantanée même avec une 4G faible) ;
+  // les mises à jour arrivent par un nouveau service worker, et la page se recharge alors seule.
   if (req.mode === "navigate") {
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000));
-    e.respondWith(Promise.race([fetch(req), timeout]).then(r => {
+    e.respondWith(caches.match("./").then(hit => hit || fetch(req).then(r => {
       const copy = r.clone(); caches.open(CACHE).then(c => c.put("./", copy)); return r;
-    }).catch(() => caches.match("./").then(r => r || caches.match("index.html"))));
+    }).catch(() => caches.match("index.html"))));
     return;
   }
   // Tuiles, icônes, manifeste et polices Google : copie locale d'abord, réseau sinon (et on garde la copie).

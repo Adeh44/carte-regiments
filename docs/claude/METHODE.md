@@ -50,5 +50,7 @@ Numérotation : v0.9 = fin du premier fil. C'est Adeh qui déclare la v1.0.
 | Marqueurs collés en pile hors de leur place | `position: relative` ajouté sur `.unit`, qui écrase le `position: absolute` de Leaflet | Ne jamais repositionner les éléments que Leaflet place. |
 | Deux symboles invisibles (ALAT, santé) | SVG en image data: avec un attribut en double : invalide en XML, toléré en HTML | Les symboles passent par `cleanGlyph()`. |
 | Symboles absents malgré la règle CSS | Le `<style>` de la page vient après celui injecté : `.sym` écrasait `.s-inf` | Sélecteur `.sym.s-xxx`. |
+| Morceaux de carte mélangés après des zooms rapides | Canvas recyclé alors qu'un dessin en attente le visait encore | Jeton `_key` par tuile, vérifié avant de dessiner. |
+| Ancienne version affichée en 4G faible | Page « réseau d'abord » avec repli sur la copie après 4 s | Copie locale d'abord + rechargement auto quand le nouveau service worker prend la main. |
 | Publication refusée sur l'artifact | Type `.bin` non servi | Tuiles en `.wasm`. |
 | Données fausses publiées (2e RG dissous en 2010, DLEM devenu 5e RE…) | Données tirées de mémoire ou de Wikipédia | Vérifier chaque unité sur sengager.fr avant ajout. |
