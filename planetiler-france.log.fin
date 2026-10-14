@@ -1,0 +1,60 @@
+     full tile 243k  288k  240k  155k  110k  173k  155k  208k  288k
+       gzipped 180k  210k  178k  118k   83k   96k   97k  128k  210k
+[m[0m0:16:55 DEB [archive] -    Max tile: 288k (gzipped: 210k)
+[m[0m0:16:55 DEB [archive] -    Avg tile: 49k (gzipped: 36k) using weighted average based on OSM traffic
+[m[0m0:16:55 DEB [archive] -     # tiles: 500,748
+[m[0m0:16:55 DEB [archive] -  # features: 52,177,508
+[m[0m0:16:55 INF [archive] - Finished in 2m51s cpu:11m14s gc:7s avg:3.9
+[m[0m0:16:55 INF [archive] -   read    1x(5% 8s wait:2m17s done:12s)
+[m[0m0:16:55 INF [archive] -   encode  4x(83% 2m22s done:1s)
+[m[0m0:16:55 INF [archive] -   write   1x(4% 7s wait:2m35s done:1s)
+[m[0m0:16:55 INF [archive] - Finished in 16m56s cpu:59m14s gc:16s avg:3.5
+[m[0m0:16:55 INF [archive] - FINISHED!
+[m[0m0:16:55 INF [archive] - 
+[m[0m0:16:55 INF [archive] - ----------------------------------------
+[m[0m0:16:55 INF [archive] - data errors:
+[m[0m0:16:55 INF [archive] - 	render_snap_fix_input	907,135
+[m[0m0:16:55 INF [archive] - 	merge_snap_fix_input	99
+[m[0m0:16:55 INF [archive] - 	omt_fix_water_before_ne_intersect	94
+[m[0m0:16:55 INF [archive] - 	osm_boundary_missing_way	84
+[m[0m0:16:55 INF [archive] - 	feature_polygon_osm_invalid_multipolygon_empty_after_fix	13
+[m[0m0:16:55 INF [archive] - 	osm_multipolygon_duplicate_member	13
+[m[0m0:16:55 INF [archive] - 	osm_multipolygon_missing_way	5
+[m[0m0:16:55 INF [archive] - ----------------------------------------
+[m[0m0:16:55 INF [archive] - 	overall        16m56s cpu:59m14s gc:16s avg:3.5
+[m[0m0:16:55 INF [archive] - 	download       35s cpu:19s avg:0.5
+[m[0m0:16:55 INF [archive] - 	water_polygons 19s cpu:50s avg:2.7
+[m[0m0:16:55 INF [archive] - 	  read     1x(38% 7s done:8s)
+[m[0m0:16:55 INF [archive] - 	  process  4x(24% 5s wait:3s done:8s)
+[m[0m0:16:55 INF [archive] - 	  write    1x(0% 0.1s wait:11s done:8s)
+[m[0m0:16:55 INF [archive] - 	natural_earth  16s cpu:21s avg:1.3
+[m[0m0:16:55 INF [archive] - 	  read     1x(69% 11s done:5s)
+[m[0m0:16:55 INF [archive] - 	  process  4x(6% 0.9s wait:11s done:5s)
+[m[0m0:16:55 INF [archive] - 	  write    1x(0% 0s wait:11s done:5s)
+[m[0m0:16:55 INF [archive] - 	osm_pass1      1m19s cpu:4m46s gc:1s avg:3.6
+[m[0m0:16:55 INF [archive] - 	  read     1x(2% 2s wait:1m17s)
+[m[0m0:16:55 INF [archive] - 	  parse    4x(72% 57s wait:12s)
+[m[0m0:16:55 INF [archive] - 	  process  1x(60% 47s wait:24s)
+[m[0m0:16:55 INF [archive] - 	osm_pass2      11m8s cpu:40m32s gc:6s avg:3.6
+[m[0m0:16:55 INF [archive] - 	  read     1x(1% 4s wait:10m39s done:10s)
+[m[0m0:16:55 INF [archive] - 	  process  4x(88% 9m50s)
+[m[0m0:16:55 INF [archive] - 	  write    1x(3% 17s wait:10m50s)
+[m[0m0:16:55 INF [archive] - 	ne_lakes       0s cpu:0s avg:0
+[m[0m0:16:55 INF [archive] - 	sort           27s cpu:1m8s gc:2s avg:2.5
+[m[0m0:16:55 INF [archive] - 	  worker  2x(26% 7s wait:9s done:4s)
+[m[0m0:16:55 INF [archive] - 	archive        2m51s cpu:11m14s gc:7s avg:3.9
+[m[0m0:16:55 INF [archive] - 	  read    1x(5% 8s wait:2m17s done:12s)
+[m[0m0:16:55 INF [archive] - 	  encode  4x(83% 2m22s done:1s)
+[m[0m0:16:55 INF [archive] - 	  write   1x(4% 7s wait:2m35s done:1s)
+[m[0m0:16:55 INF [archive] - ----------------------------------------
+[m[0m0:16:55 INF [archive] - 	archive	1.9GB
+[m[0m0:16:55 INF [archive] - 	features	3.9GB
+[m[0m0:16:55 INF [archive] - Acknowledgments
+Generated vector tiles are produced work of OpenStreetMap data.
+Such tiles are reusable under CC-BY license granted by OpenMapTiles team:
+- https://github.com/openmaptiles/openmaptiles/#license
+Maps made with these vector tiles must display a visible credit:
+- © OpenMapTiles © OpenStreetMap contributors
+Thanks to all free, open source software developers and Open Data Contributors!
+
+[m

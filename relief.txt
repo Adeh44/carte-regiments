@@ -1,0 +1,10 @@
+2574 liste.txt
+relief : 2574 tuiles d'altitude chargées
+relief z5: 14 tuiles, 7 Ko
+relief z6: 21 tuiles, 25 Ko
+relief z7: 56 tuiles, 106 Ko
+relief z8: 165 tuiles, 445 Ko
+relief z9: 526 tuiles, 1827 Ko
+relief z10: 1879 tuiles, 7094 Ko
+relief z11: 6873 tuiles, 22924 Ko
+relief total 32431 Ko

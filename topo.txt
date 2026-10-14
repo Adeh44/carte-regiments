@@ -1,0 +1,11 @@
+topo z7: 62 tuiles, entrée 2130 Ko -> sortie 984 Ko
+topo z8: 162 tuiles, entrée 7913 Ko -> sortie 3202 Ko
+topo z9: 473 tuiles, entrée 23718 Ko -> sortie 10015 Ko
+topo z10: 1461 tuiles, entrée 41341 Ko -> sortie 18931 Ko
+topo z11: 4926 tuiles, entrée 82514 Ko -> sortie 40169 Ko
+topo z12: 17787 tuiles, entrée 211270 Ko -> sortie 74573 Ko
+topo z13: 67059 tuiles, entrée 448807 Ko -> sortie 179402 Ko
+topo z14: 258060 tuiles, entrée 947348 Ko -> sortie 379199 Ko
+topo total 706479 Ko, 22395 sommets
+706M	fond/o
+33M	fond/r

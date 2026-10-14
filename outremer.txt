@@ -1,0 +1,9 @@
+guadeloupe : ok
+martinique : ok
+guyane : ok
+reunion : ok
+mayotte : ok
+nouvelle-caledonie : ok
+polynesie : ok
+djibouti : ok
+emirats : ok
