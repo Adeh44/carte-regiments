@@ -1,0 +1,39 @@
+# Phase 0 du fond topographique : mesurer le poids des tuiles France (OSM) avant de construire.
+# Tourne sur la branche fond-topo uniquement : le site public n'est pas touché.
+name: Mesure du fond topo
+on:
+  push:
+    branches: [fond-topo]
+    paths: ['.github/workflows/mesure-fond.yml', 'src/outils/stats_mbtiles.py']
+jobs:
+  mesure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - name: Espace disque
+        run: df -h / && free -g && nproc
+      - name: Télécharger Planetiler et la France (Geofabrik)
+        run: |
+          curl -sSL -o planetiler.jar https://github.com/onthegomap/planetiler/releases/download/v0.9.1/planetiler.jar
+          curl -sSL -o france.osm.pbf https://download.geofabrik.de/europe/france-latest.osm.pbf
+          ls -la
+      - name: Tuiles France z0-14 (sans bâtiments, adresses, points d'intérêt)
+        run: |
+          java -Xmx12g -jar planetiler.jar --osm-path=france.osm.pbf --output=france.mbtiles --download \
+            --maxzoom=14 --exclude-layers=building,housenumber,poi,aerodrome_label,aeroway,park,boundary \
+            --nodemap-type=array --storage=mmap 2>&1 | tail -40
+          ls -la france.mbtiles
+      - name: Statistiques par zoom et par couche
+        run: |
+          pip install mapbox-vector-tile==2.1.0 >/dev/null
+          python3 src/outils/stats_mbtiles.py france.mbtiles echantillon.mbtiles | tee stats.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mesure
+          path: |
+            stats.txt
+            echantillon.mbtiles
+          retention-days: 7
