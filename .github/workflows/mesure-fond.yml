@@ -28,7 +28,7 @@ jobs:
           set -o pipefail
           java -Xmx12g -jar planetiler.jar --osm-path=france.osm.pbf --output=france.mbtiles --download \
             --maxzoom=14 --exclude_layers=building,housenumber,poi,aerodrome_label,aeroway,park,boundary \
-            --nodemap-type=array --storage=mmap 2>&1 | tee mesure/planetiler.log | tail -40
+            --nodemap-type=sparsearray --storage=mmap 2>&1 | tee mesure/planetiler.log | tail -40
           ls -la france.mbtiles
       - name: Statistiques par zoom et par couche
         run: |
