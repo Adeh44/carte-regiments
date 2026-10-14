@@ -1,6 +1,6 @@
 # REFERENCE — Carte des régiments
 
-Ce que le projet est. Mis à jour le 2026-10-09 (v0.9).
+Ce que le projet est. Mis à jour le 2026-10-14 (v0.10).
 
 ## Le produit
 
@@ -21,11 +21,13 @@ hors ligne après une première ouverture (service worker).
 ## Arborescence
 
 ```
-index.html, sw.js, manifest.webmanifest   <- FABRIQUÉS par src/build.py (ne pas éditer)
+index.html, sw.js, manifest.webmanifest, t/   <- FABRIQUÉS par src/build.py (ne pas éditer)
 icon-192.png, icon-512.png, apple-touch-icon.png
 src/carte.template.html   <- LA source : CSS, HTML, JS et le tableau U des unités
 src/build.py              <- fabrique tout (voir plus bas)
-src/geo/*.min.json        <- fonds de carte prêts à l'emploi
+src/carto/                <- outil Rust : projette, simplifie, découpe les fonds en tuiles (t/*.wasm)
+src/geo/*.min.json        <- zones d'outre-mer, routes, villes (lus par l'outil Rust)
+src/geo/sources/          <- fonds IGN et Natural Earth, téléchargés par build.py (non versionnés, ~33 Mo)
 src/vendor/leaflet.*      <- Leaflet 1.9.4 (BSD-2)
 src/outils/               <- scripts de régénération des données + test hors ligne
 docs/claude/              <- documents de suivi (ce dossier)
@@ -35,12 +37,13 @@ build/                    <- sorties non versionnées (artifact, fichier hors li
 ## Fabriquer et publier
 
 ```
-python3 src/build.py                                   # depuis la racine du dépôt
+python3 src/build.py                                   # depuis la racine du dépôt (télécharge les sources, lance cargo)
 node src/outils/test_hors_ligne.mjs "$PWD" /tmp/x.png  # doit afficher « hors ligne : carte affichée »
 git add -A && git commit -m "vX.YY : ..." && git push origin main
 ```
 Puis republier l'artifact : outil Artifact, `action: read` sur l'URL ci-dessus, puis `publish` de
-`build/carte-regiments.html` avec `url` = l'URL de l'artifact.
+`build/carte-regiments.html` avec `url` = l'URL de l'artifact, `root` = `build`, et `files` = la liste des `t/*.wasm`.
+Variables utiles pour le test si Playwright est ailleurs : `PLAYWRIGHT` (chemin de index.mjs), `CHROME` (exécutable).
 
 Le test utilise Playwright (Chromium) installé dans le conteneur : `/opt/node22/lib/node_modules/playwright`.
 Changer le port dans le script s'il est déjà pris.
@@ -65,11 +68,19 @@ Les camps sont dans le tableau `CAMPS` : [nom, lat, lon, surface en hectares].
 - Noms 2025 : depuis le 1er juillet 2025, les centres ont perdu leur double appellation
   (CENZUB -> 94e RI, CAPCIA -> 51e RI, CENTAC -> 1er BCP, CNEC -> 1er CHOC, CEITO -> 122e RI,
   CEPC -> 3e RA) et les CFIM sont devenus des groupements d'instruction.
-- Fonds : Natural Earth (pays 1:50m, détail 1:10m dans 8 zones d'outre-mer et étranger),
-  départements et régions IGN via france-geojson, villes GeoNames (paquet npm all-the-cities, >= 1 500 hab.,
+- Fonds (depuis v0.10) : pays, rivières et lacs Natural Earth 1:10M ; départements et régions IGN via france-geojson
+  (version détaillée, ~180 000 points) ; détail outre-mer et étranger inchangé (zones.min.json) ; villes GeoNames (paquet npm all-the-cities, >= 1 500 hab.,
   >= 1 000 hab. outre-mer).
 
 ## Décisions
+
+- Fond en tuiles vectorielles préparées par l'outil Rust (v0.10) : la page ne télécharge que ce qu'elle affiche
+  (~430 Ko au démarrage au lieu de 2,9 Mo). Zooms 2 à 10 ; au-delà, les tuiles z10 sont agrandies.
+  Tuiles détaillées seulement autour de la métropole et des zones d'outre-mer ; ailleurs, le zoom 5 agrandi.
+- Unités, sigles, villes et noms de départements dessinés dans le même canvas que le fond (plus de marqueurs HTML) :
+  le clic est détecté par position. Les tuiles se dessinent par tranches de 8 ms pour garder le doigt fluide.
+- Extension .wasm pour les tuiles : seul type binaire accepté par l'hébergement des artifacts.
+- Téléphone de référence pour les performances : Xiaomi Note 14 entrée de gamme d'Adeh.
 
 - Fonds vectoriels embarqués plutôt que tuiles : l'artifact bloque les images externes, et le hors ligne l'exige.
 - Site GitHub Pages + appli installable (PWA) pour l'iPhone : l'iPhone ouvre mal un fichier HTML local.

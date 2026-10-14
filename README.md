@@ -11,4 +11,4 @@ Carte interactive des régiments, centres et écoles de l'Armée de terre.
 - Fonctionne hors ligne après la première ouverture.
 
 Données : implantations publiques, d'après sengager.fr et defense.gouv.fr (état 2026).
-Fonds de carte : Natural Earth, IGN via france-geojson, villes GeoNames. Bibliothèque : Leaflet.
+Fonds de carte : IGN (Admin Express via france-geojson), Natural Earth 1:10M, villes GeoNames, découpés en tuiles par un outil Rust (`src/carto`). Bibliothèque : Leaflet.

@@ -1,3 +1,4 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Carte des régiments</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,8 +104,10 @@ h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-heig
 .pop .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .pop .tags span { font-size: 12px; padding: 2px 7px; border-radius: 3px; background: var(--chip); border: 1px solid var(--line); }
 .unit { background: none; border: 0; }
-.unit svg { display: block; filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.35)); transition: transform .12s; }
-.unit:hover svg { transform: scale(1.18); }
+.sym { display: block; width: 32px; height: 22px; background: center / 100% 100% no-repeat; flex: none; }
+.sym.small { width: 24px; height: 16.5px; }
+.sym.big { width: 38px; height: 26px; }
+
 .ulabel { background: var(--ink); border: 0; box-shadow: 0 1px 2px rgba(0,0,0,.25); color: var(--panel); padding: 1px 6px; border-radius: 3px; font: 700 12.5px/1.25 var(--f-display); letter-spacing: .03em; white-space: nowrap; }
 .ulabel::before { display: none; }
 .dlabel { background: none; border: 0; box-shadow: none; color: var(--ink-soft); font: 600 11px var(--f-display); text-transform: uppercase; letter-spacing: .12em; opacity: .75; }
@@ -127,10 +130,10 @@ h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-heig
   .scroll { padding: 12px 16px 16px; }
   .goto { top: 10px; right: 10px; }
 }
-#map:not(.z7) .unit svg { transform: scale(.78); }
-#map:not(.z7) .unit:hover svg { transform: scale(1.05); }
+
+
 @media (max-width: 760px) { .leaflet-bottom { margin-bottom: 64px; } }
-@media (prefers-reduced-motion: reduce) { .unit svg { transition: none; } }
+
 </style>
 
 <div class="app">
@@ -191,15 +194,16 @@ h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-heig
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 // Polices Google ajoutées après coup : si le réseau ne répond pas (mode avion), rien n'attend.
-(() => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap"; document.head.appendChild(l); })();
-const WORLD = /*__WORLD__*/null;
-const DEPS = /*__DEPS__*/null;
-const REGS = /*__REGS__*/null;
-const RIVERS = /*__RIVERS__*/null;
-const ROADS = /*__ROADS__*/null;
-const LAKES = /*__LAKES__*/null;
-const CITY_RAW = /*__CITIES__*/null;
-const ZONE_GEO = /*__ZONES__*/null;
+// La carte attend les polices au plus 1,5 s pour ne pas se dessiner deux fois au démarrage.
+const fontsReady = new Promise(res => {
+  const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap";
+  l.onload = () => Promise.all(['600 11px "Saira Condensed"', '700 12px "Saira Condensed"', '400 12px "Source Sans 3"', '600 12px "Source Sans 3"'].map(f => document.fonts.load(f))).then(() => res(true), () => res(false));
+  l.onerror = () => res(false);
+  document.head.appendChild(l);
+  setTimeout(() => res(false), 1500);
+});
+const CITY_RAW = /*CITIES*/;
+const META = /*META*/;
 
 // Armes : couleur (token CSS) + glyphe dessiné dans le cadre d'unité, façon symbole OTAN.
 const ARMES = {
@@ -488,72 +492,202 @@ function visible(u) {
 }
 
 // Carte
-const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 13, worldCopyJump: true, attributionControl: true });
+const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 13, worldCopyJump: true, attributionControl: true, fadeAnimation: false });
+window.__map = map;
 map.attributionControl.setPrefix(false);
-map.attributionControl.addAttribution("Fonds : Natural Earth, IGN via france-geojson, villes GeoNames");
+map.attributionControl.addAttribution("Fonds : IGN (Admin Express via france-geojson), Natural Earth 1:10M, villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
-const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-let campLayer, worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, cityLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer;
-const baseRenderer = L.canvas({ padding: 0.5 });
-function drawBase() {
-  [campLayer, worldLayer, regLayer, depLayer, lakeLayer, road1Layer, road2Layer, riverLayer, zoneSeaLayer, zoneLandLayer, zoneAdmLayer].forEach(l => l && map.removeLayer(l));
-  worldLayer = L.geoJSON(WORLD, { renderer: baseRenderer, interactive: false, style: f => ({ color: css("--dep-line"), weight: 0.8, fillColor: f.properties.a === "FRA" ? css("--france") : css("--land"), fillOpacity: 1 }) }).addTo(map);
-  depLayer = L.geoJSON(DEPS, { renderer: baseRenderer, interactive: false, style: { color: css("--dep-line"), weight: 0.7, fillColor: css("--france"), fillOpacity: 1 } }).addTo(map);
-  // Outre-mer et étranger : côtes et limites détaillées, seulement là où l'armée est présente.
-  // Un fond de mer masque d'abord le contour mondial plus grossier.
-  zoneSeaLayer = L.layerGroup(ZONE_GEO.boxes.map(([w, s, e, n]) => L.rectangle([[s, w], [n, e]], { renderer: baseRenderer, interactive: false, stroke: false, fillColor: css("--sea"), fillOpacity: 1 }))).addTo(map);
-  // Remplissage sans contour (sinon les bords de découpe se verraient), puis côtes et frontières en traits.
-  zoneLandLayer = L.layerGroup([
-    L.geoJSON(ZONE_GEO.land, { renderer: baseRenderer, interactive: false, style: f => ({ stroke: false, fillColor: f.properties.fr ? css("--france") : css("--land"), fillOpacity: 1 }) }),
-    L.geoJSON(ZONE_GEO.coast, { renderer: baseRenderer, interactive: false, style: { color: css("--dep-line"), weight: 0.8 } })
-  ]).addTo(map);
-  zoneAdmLayer = L.geoJSON(ZONE_GEO.adm, { renderer: baseRenderer, interactive: false, style: { color: css("--dep-line"), weight: 0.8, dashArray: "4 3" } }).addTo(map);
-  lakeLayer = L.geoJSON(LAKES, { renderer: baseRenderer, interactive: false, style: { stroke: false, fillColor: css("--sea"), fillOpacity: 1 } }).addTo(map);
-  road2Layer = L.geoJSON(ROADS, { renderer: baseRenderer, interactive: false, filter: f => f.properties.t === 2, style: { color: css("--road2"), weight: 1 } }).addTo(map);
-  road1Layer = L.geoJSON(ROADS, { renderer: baseRenderer, interactive: false, filter: f => f.properties.t === 1, style: { color: css("--road"), weight: 1.6 } }).addTo(map);
-  riverLayer = L.geoJSON(RIVERS, { renderer: baseRenderer, interactive: false, style: { color: css("--river"), weight: 1.3 } }).addTo(map);
-  regLayer = L.geoJSON(REGS, { renderer: baseRenderer, interactive: false, style: { color: css("--reg-line"), weight: 1.4, fill: false } }).addTo(map);
-  // Camps : cercle de même surface que le camp réel (forme indicative)
-  campLayer = L.layerGroup(CAMPS.map(([n, lat, lon, ha]) => {
-    const r = Math.sqrt(ha * 10000 / Math.PI), top = [lat + r / 111320, lon];
-    const c = L.circle([lat, lon], { radius: r, renderer: baseRenderer, color: css("--reg-line"), weight: 1.2, dashArray: "5 4", fillColor: css("--accent"), fillOpacity: 0.1 })
-      .bindTooltip("Camp de " + n, { permanent: true, direction: "top", className: "clabel", interactive: false });
-    // Nom posé au-dessus du cercle, pour ne pas cacher les symboles des unités
-    c.on("add", () => setTimeout(() => c.openTooltip(top), 0));
-    return c.bindPopup(`<div class="pop"><div class="pop-nm">Camp de ${n}</div><dl><dt>Surface</dt><dd>environ ${ha.toLocaleString("fr-FR")} hectares</dd><dt>Forme</dt><dd>cercle de même surface (tracé réel non disponible)</dd></dl></div>`);
+// Couleurs du thème, lues une seule fois (getComputedStyle coûte cher sur petit téléphone).
+const COL = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  ["ink", "sea", "land", "france", "dep-line", "reg-line", "accent", "river", "road", "road2", "city", "city-soft", "city-halo", "ink-soft", "panel", "paper",
+   ...Object.keys(ARMES).map(a => "c-" + a)].forEach(n => COL[n] = cs.getPropertyValue("--" + n).trim());
+}
+readColors();
+// Les canvas au-delà de 2x coûtent beaucoup de mémoire pour un gain invisible.
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+// ---------- Fond de carte en tuiles vectorielles (préparées par l'outil Rust "carto") ----------
+const BUNDLES = new Set(META.bundles), EXT = META.ext, ZMAX = META.zmax, ZWORLD = 5;
+const groupZ = z => z <= META.zgroup ? 0 : Math.max(META.zgroup, z - META.gdepth);
+const bundleCache = new Map();
+function loadBundle(name) {
+  let p = bundleCache.get(name);
+  if (!p) {
+    // Fichier hors ligne : paquets embarqués en base64 (fetch ne marche pas en file://)
+    const inl = window.TILES_INLINE && window.TILES_INLINE[name];
+    const get = inl ? Promise.resolve(Uint8Array.from(atob(inl), ch => ch.charCodeAt(0)).buffer)
+      : fetch("t/" + name + ".wasm").then(r => r.ok ? r.arrayBuffer() : Promise.reject());
+    p = get.then(ab => {
+      const u = new Uint8Array(ab); let i = 0;
+      const rd = () => { let v = 0, s = 1, b; do { b = u[i++]; v += (b & 127) * s; s *= 128; } while (b & 128); return v; };
+      const n = rd(), idx = new Array(n);
+      for (let k = 0; k < n; k++) idx[k] = [rd(), rd(), rd()];
+      const tiles = new Map(); let off = i;
+      for (const [dx, dy, len] of idx) { tiles.set(dx * 65536 + dy, off); off += len; }
+      return { u, tiles };
+    }).catch(() => null);
+    bundleCache.set(name, p);
+  }
+  return p;
+}
+// Trouve les données d'une tuile ; à défaut (hors zone détaillée ou au-delà de z10), celles d'un ancêtre agrandi.
+async function findTile(z, x, y) {
+  for (let zz = Math.min(z, ZMAX); zz >= 2; zz--) {
+    const s = z - zz, ax = x >> s, ay = y >> s, sh = zz - groupZ(zz), gx = ax >> sh, gy = ay >> sh;
+    const name = zz + "_" + gx + "_" + gy;
+    if (!BUNDLES.has(name)) { if (zz <= ZWORLD) return null; continue; }
+    const b = await loadBundle(name);
+    if (!b) continue;
+    const off = b.tiles.get((ax - (gx << sh)) * 65536 + (ay - (gy << sh)));
+    if (off !== undefined) return { u: b.u, off, s: 1 << s, ax, ay };
+    if (zz <= ZWORLD) return null;
+  }
+  return null;
+}
+// Style des couches selon le zoom affiché. f = remplissage, s = trait, w = épaisseur, a = opacité.
+function layerStyle(id, z) {
+  switch (id) {
+    case 0: return { f: COL.land, s: COL["dep-line"], w: 0.8 };
+    case 1: return { f: COL.france, s: COL["dep-line"], w: 0.8 };
+    case 3: return { f: COL.france, s: COL["dep-line"], w: z >= 8 ? 0.9 : 0.7 };
+    case 5: return { f: COL.sea };
+    case 6: return { f: COL.france };
+    case 7: return { f: COL.land };
+    case 8: return { s: COL["dep-line"], w: 0.8 };
+    case 9: return { s: COL["dep-line"], w: 0.8, d: [4, 3] };
+    case 10: return { f: COL.sea };
+    case 11: return { s: COL.road2, w: z >= 9 ? 1.6 : 1, a: 0.6 };
+    case 12: return { s: COL.road, w: z >= 9 ? 2.6 : z >= 7 ? 2 : 1.4, a: 0.55 };
+    case 13: return { s: COL.river, w: z >= 9 ? 1.6 : z >= 7 ? 1.1 : 0.8 };
+    case 14: return { s: COL.river, w: z >= 9 ? 2.4 : z >= 7 ? 1.7 : 1.2 };
+    case 15: return { s: COL["reg-line"], w: z >= 8 ? 1.8 : 1.4 };
+  }
+  return null;
+}
+function drawTile(ctx, t, z, x, y) {
+  const u = t.u; let i = t.off;
+  const rd = () => { let v = 0, s = 1, b; do { b = u[i++]; v += (b & 127) * s; s *= 128; } while (b & 128); return v; };
+  const k = t.s * 256 / EXT, ox = -(x - t.ax * t.s) * 256, oy = -(y - t.ay * t.s) * 256;
+  let px = 0, py = 0;
+  const nl = rd();
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  for (let l = 0; l < nl; l++) {
+    const id = u[i++], np = rd(), st = layerStyle(id, z);
+    ctx.beginPath();
+    for (let p = 0; p < np; p++) {
+      const n = rd();
+      for (let q = 0; q < n; q++) {
+        const dx = rd(), dy = rd();
+        px += dx & 1 ? -(dx + 1) / 2 : dx / 2;
+        py += dy & 1 ? -(dy + 1) / 2 : dy / 2;
+        q ? ctx.lineTo(px * k + ox, py * k + oy) : ctx.moveTo(px * k + ox, py * k + oy);
+      }
+      if (st && st.f) ctx.closePath();
+    }
+    if (!st) continue;
+    ctx.globalAlpha = st.a || 1;
+    if (st.f) { ctx.fillStyle = st.f; ctx.fill("evenodd"); }
+    if (st.s) { ctx.strokeStyle = st.s; ctx.lineWidth = st.w; ctx.setLineDash(st.d || []); ctx.stroke(); }
+  }
+  ctx.globalAlpha = 1; ctx.setLineDash([]);
+}
+// Un seul canvas par tuile : fond, noms de lieux et symboles d'unités.
+// (186 marqueurs HTML = 186 calques que le téléphone recompose à chaque zoom ; ici, zéro.)
+// Les tuiles se dessinent par petits lots, une tranche de quelques ms par image :
+// le doigt garde la main même quand dix tuiles arrivent d'un coup.
+const drawQueue = [];
+let pumping = false;
+function schedule(fn) {
+  drawQueue.push(fn);
+  if (!pumping) { pumping = true; requestAnimationFrame(pump); }
+}
+function pump() {
+  const t0 = performance.now();
+  do { drawQueue.shift()(); } while (drawQueue.length && performance.now() - t0 < 8);
+  if (drawQueue.length) requestAnimationFrame(pump); else pumping = false;
+}
+const MapLayer = L.GridLayer.extend({
+  createTile(c, done) {
+    // Canvas recyclés : allouer une image de 512x512 à chaque tuile coûte plus que la dessiner
+    const t = pool.pop() || document.createElement("canvas");
+    if (t.width !== 256 * DPR) t.width = t.height = 256 * DPR;
+    Promise.all([findTile(c.z, c.x, c.y), spritesReady, fontsReady]).then(([d]) => schedule(() => {
+      const ctx = t.getContext("2d");
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, 256, 256);
+      if (d) drawTile(ctx, d, c.z, c.x, c.y);
+      drawLabels(ctx, c);
+      done(null, t);
+    }));
+    return t;
+  }
+});
+
+// Camps : cercle de même surface que le camp réel (forme indicative), en SVG (11 formes, rien à redessiner au déplacement)
+const campRenderer = L.svg({ padding: 0.3 });
+const campStyle = () => ({ color: COL["reg-line"], weight: 1.2, dashArray: "5 4", fillColor: COL.accent, fillOpacity: 0.1 });
+const campLayer = L.layerGroup(CAMPS.map(([n, lat, lon, ha]) => {
+  const r = Math.sqrt(ha * 10000 / Math.PI), top = [lat + r / 111320, lon];
+  const c = L.circle([lat, lon], { radius: r, renderer: campRenderer, ...campStyle() })
+    .bindTooltip("Camp de " + n, { permanent: true, direction: "top", className: "clabel", interactive: false });
+  // Nom posé au-dessus du cercle, pour ne pas cacher les symboles des unités
+  c.on("add", () => setTimeout(() => c.openTooltip(top), 0));
+  return c.bindPopup(() => `<div class="pop"><div class="pop-nm">Camp de ${n}</div><dl><dt>Surface</dt><dd>environ ${ha.toLocaleString("fr-FR")} hectares</dd><dt>Forme</dt><dd>cercle de même surface (tracé réel non disponible)</dd></dl></div>`);
+}));
+if (state.camps) campLayer.addTo(map);
+
+// Dans une image SVG, un attribut en double invalide tout le dessin : on garde la dernière valeur.
+const cleanGlyph = a => glyph(a).replace(/<(\w+)([^>]*?)(\/?)>/g, (m, tag, attrs, end) => {
+  const seen = new Map();
+  for (const [, k, v] of attrs.matchAll(/([\w-]+)="([^"]*)"/g)) seen.set(k, v);
+  return `<${tag}${[...seen].map(([k, v]) => ` ${k}="${v}"`).join("")}${end}>`;
+});
+// Symboles d'unités : une image par arme, générée une fois (au lieu d'un SVG vivant par marqueur).
+const spriteCss = document.createElement("style");
+document.head.appendChild(spriteCss);
+function buildSprites() {
+  spriteCss.textContent = Object.keys(ARMES).map(a => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="44" viewBox="-1 -1 32 22"><rect x="0.6" y="1.1" width="30" height="20" rx="1.8" fill="#000" fill-opacity=".28"/><rect x="0" y="0" width="30" height="20" rx="1.5" fill="${COL["c-" + a]}" stroke="${COL.panel}" stroke-width="1.5"/>${cleanGlyph(a)}</svg>`;
+    return `.sym.s-${a}{background-image:url("data:image/svg+xml,${encodeURIComponent(svg)}")}`;
+  }).join("\n");
+}
+// Les mêmes symboles en bitmaps (taille normale et réduite) pour le dessin dans les tuiles.
+const SPR = {};
+let spritesReady;
+function rasterSprites() {
+  spritesReady = Promise.all(Object.keys(ARMES).map(a => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="44" viewBox="-1 -1 32 22"><rect x="0.6" y="1.1" width="30" height="20" rx="1.8" fill="#000" fill-opacity=".28"/><rect x="0" y="0" width="30" height="20" rx="1.5" fill="${COL["c-" + a]}" stroke="${COL.panel}" stroke-width="1.5"/>${cleanGlyph(a)}</svg>`;
+    const img = new Image();
+    img.src = "data:image/svg+xml," + encodeURIComponent(svg);
+    return img.decode().then(() => {
+      SPR[a] = [1, 0.78].map(sc => {
+        const w = Math.round(32 * sc * DPR), h = Math.round(22 * sc * DPR), cv = document.createElement("canvas");
+        cv.width = w; cv.height = h; cv.getContext("2d").drawImage(img, 0, 0, w, h);
+        return cv;
+      });
+    }).catch(() => {});
   }));
-  if (state.camps) campLayer.addTo(map);
-  depLayer.eachLayer(l => {
-    l.bindTooltip(l.feature.properties.n, { permanent: true, direction: "center", className: "dlabel", interactive: false }).openTooltip(l.getBounds().getCenter());
-  });
-  styleByZoom();
-  if (cityLayer) { resetCities(); }
 }
-// Routes : autoroutes dès le zoom 6, routes secondaires dès le zoom 7.
-function styleByZoom() {
-  const z = map.getZoom ? (map._loaded ? map.getZoom() : 6) : 6;
-  road1Layer?.setStyle({ opacity: z >= 6 ? 0.55 : 0, weight: z >= 9 ? 2.6 : z >= 7 ? 2 : 1.4 });
-  road2Layer?.setStyle({ opacity: z >= 7 ? 0.6 : 0, weight: z >= 9 ? 1.6 : 1 });
-  riverLayer?.setStyle({ weight: z >= 9 ? 2.2 : z >= 7 ? 1.6 : 1.1 });
+buildSprites();
+rasterSprites();
+const sym = (arme, cls = "") => `<i class="sym s-${arme} ${cls}" aria-hidden="true"></i>`;
+
+function onTheme() {
+  readColors(); buildSprites(); rasterSprites();
+  campLayer.eachLayer(c => c.setStyle(campStyle()));
+  spritesReady.then(resetCities);
 }
-drawBase();
 const mq = window.matchMedia("(prefers-color-scheme: dark)");
-mq.addEventListener?.("change", drawBase);
-new MutationObserver(drawBase).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+mq.addEventListener?.("change", onTheme);
+new MutationObserver(onTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 function setZoomClass() {
   const z = map.getZoom(), el = map.getContainer();
   el.classList.toggle("z7", z >= 7);
   el.classList.toggle("z8", z >= 8);
   el.classList.toggle("z9", z >= 9);
-  styleByZoom();
-  refreshLabels();
-}
-// Leaflet mesure les étiquettes à l'ouverture : on les remesure quand leur affichage change.
-function refreshLabels() {
-  unitLayer.eachLayer(m => m.getTooltip()?.update());
-  depLayer?.eachLayer(l => l.getTooltip()?.update());
 }
 map.on("zoomend", setZoomClass);
 
@@ -580,7 +714,7 @@ Object.values(groups).forEach(g => {
 
 function popupHtml(u) {
   const tags = u.tags.map(t => `<span>${TAGS[t]}</span>`).join("");
-  return `<div class="pop"><div class="pop-h">${symbol(u.arme, 36)}<div class="pop-ab">${u.ab}</div></div>
+  return `<div class="pop"><div class="pop-h">${sym(u.arme, "big")}<div class="pop-ab">${u.ab}</div></div>
     <div class="pop-nm">${u.nm}</div>
     <dl><dt>Garnison</dt><dd>${u.town} (${u.dep})</dd>
     <dt>Arme</dt><dd>${ARMES[u.arme].label}</dd>
@@ -589,65 +723,113 @@ function popupHtml(u) {
     ${tags ? `<div class="tags">${tags}</div>` : ""}</div>`;
 }
 
-const unitLayer = L.layerGroup().addTo(map);
-U.forEach(u => {
-  const icon = L.divIcon({ className: "unit", html: symbol(u.arme), iconSize: [W + 2, H + 2], iconAnchor: [W / 2 + 1 - u.dx, H / 2 + 1 - u.dy], popupAnchor: [u.dx, u.dy - H / 2], tooltipAnchor: [u.dir === "left" ? u.dx - W / 2 - 2 : u.dx + W / 2 + 2, u.dy] });
-  u.marker = L.marker([u.mlat, u.mlon], { icon, title: u.ab + " · " + u.town, riseOnHover: true, keyboard: true })
-    .bindPopup(popupHtml(u), { maxWidth: 300, autoPanPadding: [20, 70] })
-    .bindTooltip(u.ab, { permanent: true, direction: u.dir, className: "ulabel", interactive: false });
+// Unités visibles (dessinées dans les tuiles) et ouverture de leur fiche.
+let shownSet = new Set(U);
+function openUnit(u) {
+  L.popup({ maxWidth: 300, autoPanPadding: [20, 70], offset: [u.dx, 7 + u.dy - H / 2] })
+    .setLatLng([u.mlat, u.mlon]).setContent(popupHtml(u)).openOn(map);
+}
+// Quelle unité sous le doigt ? (comparaison avec les 186 positions, instantané)
+function unitAt(pt) {
+  const z = map.getZoom(), sc = z < 7 ? 0.78 : 1;
+  let best = null, bd = 1e9;
+  for (const u of shownSet) {
+    const p = map.latLngToContainerPoint([u.mlat, u.mlon]), cx = p.x + u.dx * sc, cy = p.y + u.dy * sc;
+    const ddx = Math.abs(pt.x - cx), ddy = Math.abs(pt.y - cy);
+    // Zone de toucher un peu plus large que le symbole (doigt)
+    if (ddx <= 19 * sc && ddy <= 14 * sc && ddx + ddy < bd) { bd = ddx + ddy; best = u; }
+  }
+  return best;
+}
+map.on("click", e => { const u = unitAt(e.containerPoint); if (u) openUnit(u); });
+let hoverRaf = 0;
+map.on("mousemove", e => {
+  if (hoverRaf) return;
+  hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; map.getContainer().style.cursor = unitAt(e.containerPoint) ? "pointer" : ""; });
 });
 
-// Villes : calque canvas en tuiles, au-dessus du fond et sous les symboles.
+// Villes et noms de départements : calque canvas en tuiles, au-dessus du fond et sous les symboles.
 // Pour chaque niveau de zoom on place les noms par ordre d'importance, sans chevauchement
 // entre eux ni avec les symboles d'unités affichés.
 const CITIES = CITY_RAW.map(c => ({ n: c[0], lat: c[1], lon: c[2], pop: c[3], fr: c[4] === 1, gar: false }));
 U.forEach(u => {
   const name = u.town.replace(/\s*\(.*\)$/, "");
   const k = Math.cos(u.lat * Math.PI / 180);
-  const near = CITIES.find(c => norm(c.n) === norm(name) && Math.abs(c.lat - u.lat) < 0.06 && Math.abs(c.lon - u.lon) * k < 0.06);
+  const nn = norm(name);
+  // Position d'abord (rapide), nom ensuite : évite 1 million de normalisations au démarrage
+  const near = CITIES.find(c => Math.abs(c.lat - u.lat) < 0.06 && Math.abs(c.lon - u.lon) * k < 0.06 && norm(c.n) === nn);
   if (near) near.gar = true;
   else CITIES.push({ n: name, lat: u.lat, lon: u.lon, pop: 0, fr: true, gar: true });
 });
+// Projection Mercator maison (plus légère que map.project) : coordonnées monde à z0, en pixels.
+const mx = lon => (lon + 180) / 360 * 256;
+const my = lat => { const s = Math.sin(Math.max(-85.0511, Math.min(85.0511, lat)) * Math.PI / 180); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 256; };
+const prio = c => c.pop * (c.fr ? 1 : 0.3) + (c.gar ? 120000 : 0);
+CITIES.forEach(c => { c.X = mx(c.lon); c.Y = my(c.lat); });
+CITIES.sort((a, b) => prio(b) - prio(a));
+U.forEach(u => { u.X = mx(u.mlon); u.Y = my(u.mlat); });
+const DEPS = META.deps.map(d => ({ n: d[0].toUpperCase(), lat: d[1], lon: d[2], X: mx(d[2]), Y: my(d[1]), dep: true }));
 const minPop = z => z <= 4 ? 500000 : z === 5 ? 150000 : z === 6 ? 45000 : z === 7 ? 14000 : z === 8 ? 5000 : z === 9 ? 2000 : 0;
+const FAM = '"Source Sans 3", "Segoe UI", system-ui, sans-serif';
+const DEP_FONT = '600 11px "Saira Condensed", "Arial Narrow", sans-serif';
 const cityFont = c => {
-  const fam = '"Source Sans 3", "Segoe UI", system-ui, sans-serif';
-  if (!c.fr) return `400 ${c.pop >= 500000 ? 12 : 11}px ${fam}`;
-  if (c.pop >= 500000) return `600 13.5px ${fam}`;
-  if (c.pop >= 100000) return `600 12.5px ${fam}`;
-  if (c.pop >= 20000 || c.gar) return `400 12px ${fam}`;
-  return `400 11px ${fam}`;
+  if (c.dep) return DEP_FONT;
+  if (!c.fr) return `400 ${c.pop >= 500000 ? 12 : 11}px ${FAM}`;
+  if (c.pop >= 500000) return `600 13.5px ${FAM}`;
+  if (c.pop >= 100000) return `600 12.5px ${FAM}`;
+  if (c.pop >= 20000 || c.gar) return `400 12px ${FAM}`;
+  return `400 11px ${FAM}`;
 };
+// Largeur des noms : table de largeur par caractère, mesurée une fois par police
+// (des milliers de measureText à chaque zoom coûtaient cher sur petit téléphone).
 const measureCtx = document.createElement("canvas").getContext("2d");
-let widthCache = {};
+let charW = {};
 function textW(c) {
-  const f = cityFont(c), key = f + c.n;
-  if (widthCache[key] == null) { measureCtx.font = f; widthCache[key] = measureCtx.measureText(c.n).width; }
-  return widthCache[key];
+  if (c.w != null) return c.w;
+  const f = cityFont(c);
+  let tbl = charW[f];
+  if (!tbl) { tbl = charW[f] = new Map(); measureCtx.font = f; }
+  let w = 0;
+  for (const ch of c.n) {
+    let cw = tbl.get(ch);
+    if (cw === undefined) { if (measureCtx.font !== f) measureCtx.font = f; cw = measureCtx.measureText(ch).width; tbl.set(ch, cw); }
+    w += cw;
+  }
+  return (c.w = w + (c.dep ? 1.3 * c.n.length : 0));
 }
 let placeCache = {};
 function placement(z) {
   if (placeCache[z]) return placeCache[z];
-  const CELL = 128, grid = new Map(), placed = [];
-  const keys = b => { const r = []; for (let x = Math.floor(b.x0 / CELL); x <= Math.floor(b.x1 / CELL); x++) for (let y = Math.floor(b.y0 / CELL); y <= Math.floor(b.y1 / CELL); y++) r.push(x + ":" + y); return r; };
+  const CELL = 128, grid = new Map(), placed = [], units = [];
+  const keys = b => { const r = []; for (let x = Math.floor(b.x0 / CELL); x <= Math.floor(b.x1 / CELL); x++) for (let y = Math.floor(b.y0 / CELL); y <= Math.floor(b.y1 / CELL); y++) r.push(x * 100003 + y); return r; };
   const hit = b => keys(b).some(k => (grid.get(k) || []).some(o => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0));
-  const add = b => keys(b).forEach(k => { if (!grid.has(k)) grid.set(k, []); grid.get(k).push(b); });
+  const add = b => keys(b).forEach(k => { let g = grid.get(k); if (!g) grid.set(k, g = []); g.push(b); });
   // Obstacles : symboles et sigles des unités visibles
   const sc = z < 7 ? 0.78 : 1;
   U.forEach(u => {
-    if (!unitLayer.hasLayer(u.marker)) return;
-    const p = map.project([u.mlat, u.mlon], z), cx = p.x + u.dx, cy = p.y + u.dy;
+    if (!shownSet.has(u)) return;
+    const k = 2 ** z, cx = u.X * k + u.dx * sc, cy = u.Y * k + u.dy * sc;
+    units.push({ u, cx, cy, sc });
     add({ x0: cx - 16 * sc, x1: cx + 16 * sc, y0: cy - 11 * sc, y1: cy + 11 * sc });
     if (z >= 7) {
       const w = u.ab.length * 7 + 12;
       add(u.dir === "left" ? { x0: cx - 18 - w, x1: cx - 16, y0: cy - 9, y1: cy + 9 } : { x0: cx + 16, x1: cx + 18 + w, y0: cy - 9, y1: cy + 9 });
     }
   });
+  // Noms de départements (zooms 7 et 8) : prioritaires, centrés sur leur point.
+  if (z === 7 || z === 8) DEPS.forEach(d => {
+    const p = { x: d.X * 2 ** z, y: d.Y * 2 ** z }, w = textW(d);
+    const b = { x0: p.x - w / 2 - 2, x1: p.x + w / 2 + 2, y0: p.y - 7, y1: p.y + 7 };
+    if (hit(b)) return;
+    add(b); placed.push({ c: d, x: p.x, y: p.y, tx: p.x - w / 2, ty: p.y, dot: false, b });
+  });
   const mp = minPop(z);
   // Les villes étrangères restent discrètes : seuil de population plus haut.
-  const cand = CITIES.filter(c => c.pop >= (c.fr ? mp : Math.max(mp * 3, 200000)) || (c.gar && z >= 7))
-    .sort((a, b) => (b.pop * (b.fr ? 1 : 0.3) + (b.gar ? 120000 : 0)) - (a.pop * (a.fr ? 1 : 0.3) + (a.gar ? 120000 : 0)));
+  // CITIES est déjà triée par importance : un simple filtre garde l'ordre.
+  const cand = CITIES.filter(c => c.pop >= (c.fr ? mp : Math.max(mp * 3, 200000)) || (c.gar && z >= 7));
+  const kz = 2 ** z;
   cand.forEach(c => {
-    const p = map.project([c.lat, c.lon], z), w = textW(c), h = c.pop >= 100000 ? 16 : 14;
+    const p = { x: c.X * kz, y: c.Y * kz }, w = textW(c), h = c.pop >= 100000 ? 16 : 14;
     const dot = { x0: p.x - 3, x1: p.x + 3, y0: p.y - 3, y1: p.y + 3 };
     const dotFree = !hit(dot);
     const spots = [[6, -h / 2], [-6 - w, -h / 2], [-w / 2, -h - 5], [-w / 2, 5], [-w / 2, 17], [-w / 2, -h - 17], [-w / 2, 29], [-w / 2, -h - 29]];
@@ -659,56 +841,81 @@ function placement(z) {
       return;
     }
   });
+  placed.units = units;
   return (placeCache[z] = placed);
 }
-const CityLayer = L.GridLayer.extend({
-  createTile(coords) {
-    const t = document.createElement("canvas"), sz = this.getTileSize(), r = window.devicePixelRatio || 1;
-    t.width = sz.x * r; t.height = sz.y * r;
-    const ctx = t.getContext("2d"); ctx.scale(r, r);
-    const ox = coords.x * sz.x, oy = coords.y * sz.y;
-    const ink = css("--city"), soft = css("--city-soft"), halo = css("--city-halo");
-    ctx.textBaseline = "middle"; ctx.lineJoin = "round";
-    placement(coords.z).forEach(it => {
-      const b = it.b;
-      if (b.x1 < ox - 4 || b.x0 > ox + sz.x + 4 || b.y1 < oy - 4 || b.y0 > oy + sz.y + 4) return;
-      const x = it.x - ox, y = it.y - oy;
-      if (it.dot) {
-        ctx.beginPath(); ctx.arc(x, y, it.c.pop >= 100000 ? 2.5 : 1.8, 0, Math.PI * 2);
-        ctx.fillStyle = soft; ctx.strokeStyle = halo; ctx.lineWidth = 1; ctx.fill(); ctx.stroke();
-      }
-      ctx.font = cityFont(it.c);
-      ctx.strokeStyle = halo; ctx.lineWidth = 3; ctx.strokeText(it.c.n, it.tx - ox, it.ty - oy);
-      ctx.fillStyle = it.c.fr && it.c.pop >= 20000 ? ink : soft; ctx.fillText(it.c.n, it.tx - ox, it.ty - oy);
-    });
-    return t;
+const ULABEL_FONT = '700 12.5px "Saira Condensed", "Arial Narrow", sans-serif';
+const ulabelW = {};
+function drawLabels(ctx, coords) {
+  const sz = 256, ox = coords.x * sz, oy = coords.y * sz;
+  const pl = placement(coords.z), out = b => b.x1 < ox - 4 || b.x0 > ox + sz + 4 || b.y1 < oy - 4 || b.y0 > oy + sz + 4;
+  const ink = COL.city, soft = COL["city-soft"], halo = COL["city-halo"];
+  ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+  for (const it of pl) {
+    if (out(it.b)) continue;
+    const x = it.x - ox, y = it.y - oy;
+    if (it.c.dep) {
+      ctx.font = DEP_FONT; ctx.letterSpacing = "1.3px"; ctx.globalAlpha = 0.75;
+      ctx.fillStyle = COL["ink-soft"]; ctx.fillText(it.c.n, it.tx - ox, it.ty - oy);
+      ctx.globalAlpha = 1; ctx.letterSpacing = "0px";
+      continue;
+    }
+    if (it.dot) {
+      ctx.beginPath(); ctx.arc(x, y, it.c.pop >= 100000 ? 2.5 : 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = soft; ctx.strokeStyle = halo; ctx.lineWidth = 1; ctx.fill(); ctx.stroke();
+    }
+    ctx.font = cityFont(it.c);
+    ctx.strokeStyle = halo; ctx.lineWidth = 3; ctx.strokeText(it.c.n, it.tx - ox, it.ty - oy);
+    ctx.fillStyle = it.c.fr && it.c.pop >= 20000 ? ink : soft; ctx.fillText(it.c.n, it.tx - ox, it.ty - oy);
   }
+  // Symboles d'unités, puis sigles (à partir du zoom 7)
+  const big = coords.z >= 7;
+  for (const { u, cx, cy, sc } of pl.units) {
+    if (cx + 80 < ox || cx - 80 > ox + sz || cy + 14 < oy || cy - 14 > oy + sz) continue;
+    const img = SPR[u.arme] && SPR[u.arme][sc === 1 ? 0 : 1];
+    if (img) ctx.drawImage(img, cx - 16 * sc - ox, cy - 11 * sc - oy, 32 * sc, 22 * sc);
+  }
+  if (!big) return;
+  ctx.font = ULABEL_FONT; ctx.letterSpacing = "0.4px";
+  for (const { u, cx, cy } of pl.units) {
+    const w = ulabelW[u.ab] ??= ctx.measureText(u.ab).width + 12;
+    const x = u.dir === "left" ? cx - 17 - w : cx + 17, y = cy - 9;
+    if (x + w < ox || x > ox + sz || y + 18 < oy || y > oy + sz) continue;
+    ctx.fillStyle = COL.ink;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - ox, y - oy, w, 18, 3) : ctx.rect(x - ox, y - oy, w, 18); ctx.fill();
+    ctx.fillStyle = COL.panel; ctx.fillText(u.ab, x - ox + 6, y - oy + 9.5);
+  }
+  ctx.letterSpacing = "0px";
+}
+const pool = [];
+const mapLayer = new MapLayer({ updateWhenZooming: false, updateWhenIdle: true, keepBuffer: 2 }).addTo(map);
+mapLayer.on("tileunload", e => { if (pool.length < 48) pool.push(e.tile); });
+function resetCities() { placeCache = {}; mapLayer.redraw(); }
+// Polices arrivées après le délai : un seul redessin, avec les bonnes largeurs.
+let fontsLate = false;
+fontsReady.then(ok => { if (!ok) fontsLate = true; });
+document.fonts?.addEventListener?.("loadingdone", () => {
+  if (!fontsLate) return;
+  fontsLate = false; charW = {}; CITIES.forEach(c => c.w = null); DEPS.forEach(c => c.w = null); resetCities();
 });
-map.createPane("cities");
-map.getPane("cities").style.zIndex = 450;
-map.getPane("cities").style.pointerEvents = "none";
-cityLayer = new CityLayer({ pane: "cities", updateWhenZooming: false, keepBuffer: 4 }).addTo(map);
-function resetCities() { placeCache = {}; cityLayer?.redraw(); }
-document.fonts?.ready.then(() => { widthCache = {}; resetCities(); });
 
 // Panneau
 function counts(key) {
   const c = {};
+  const saveSet = state[key];
+  state[key] = new Set();
   U.forEach(u => {
-    const saveSet = state[key];
-    state[key] = new Set();
-    const ok = visible(u);
-    state[key] = saveSet;
-    if (!ok) return;
+    if (!visible(u)) return;
     const vals = key === "armes" ? [u.arme] : key === "tags" ? u.tags : [u.zone];
     vals.forEach(v => c[v] = (c[v] || 0) + 1);
   });
+  state[key] = saveSet;
   return c;
 }
 function chip(container, key, id, label, withSymbol) {
   const b = document.createElement("button");
   b.type = "button"; b.className = "chip" + (withSymbol ? "" : " tag"); b.dataset.k = key; b.dataset.v = id;
-  b.innerHTML = (withSymbol ? symbol(id, 24) : "") + `<span>${label}</span><span class="n"></span>`;
+  b.innerHTML = (withSymbol ? sym(id, "small") : "") + `<span>${label}</span><span class="n"></span>`;
   b.addEventListener("click", () => {
     const s = state[key];
     s.has(id) ? s.delete(id) : s.add(id);
@@ -723,7 +930,11 @@ Object.entries(ZONES).forEach(([k, v]) => chip(elZones, "zones", k, v, false));
 document.querySelectorAll("[data-reset]").forEach(b => b.addEventListener("click", () => {
   state[{ arme: "armes", tag: "tags", zone: "zones" }[b.dataset.reset]].clear(); save(); render();
 }));
-document.getElementById("q").addEventListener("input", e => { state.q = norm(e.target.value.trim()); render(); });
+let qTimer;
+document.getElementById("q").addEventListener("input", e => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { state.q = norm(e.target.value.trim()); render(); }, 150);
+});
 document.getElementById("nAll").textContent = U.length;
 const campsChip = document.getElementById("campsChip");
 campsChip.setAttribute("aria-pressed", state.camps);
@@ -734,6 +945,7 @@ campsChip.addEventListener("click", () => {
 });
 
 const elList = document.getElementById("list");
+let listDirty = true, shown = [];
 function render() {
   const cnt = { armes: counts("armes"), tags: counts("tags"), zones: counts("zones") };
   document.querySelectorAll(".chip[data-k]").forEach(b => {
@@ -741,28 +953,29 @@ function render() {
     b.setAttribute("aria-pressed", state[k].has(v));
     b.querySelector(".n").textContent = cnt[k][v] || 0;
   });
-  unitLayer.clearLayers();
-  const shown = U.filter(visible);
-  shown.forEach(u => unitLayer.addLayer(u.marker));
+  shown = U.filter(visible);
+  shownSet = new Set(shown);
   document.getElementById("nShown").textContent = shown.length;
-  refreshLabels();
   resetCities();
-  elList.innerHTML = "";
+  listDirty = true;
+  if (!panel.classList.contains("closed")) buildList();
+}
+// La liste (186 boutons) n'est construite que quand le panneau est visible.
+function buildList() {
+  if (!listDirty) return;
+  listDirty = false;
   if (!shown.length) { elList.innerHTML = `<p class="empty">Aucune unité ne correspond. Retirez un filtre ou changez la recherche.</p>`; return; }
   const order = Object.keys(ARMES);
-  shown.slice().sort((a, b) => order.indexOf(a.arme) - order.indexOf(b.arme) || a.ab.localeCompare(b.ab, "fr", { numeric: true }))
-    .forEach(u => {
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "item";
-      b.innerHTML = `${symbol(u.arme, 30)}<span class="t"><span class="ab">${u.ab}</span> · ${u.town}<div class="nm">${u.nm}</div></span>`;
-      b.addEventListener("click", () => {
-        if (window.matchMedia("(max-width: 760px)").matches) closePanel();
-        map.flyTo([u.mlat, u.mlon], Math.max(map.getZoom(), 10), { duration: 0.8 });
-        map.once("moveend", () => u.marker.openPopup());
-      });
-      elList.appendChild(b);
-    });
+  elList.innerHTML = shown.slice().sort((a, b) => order.indexOf(a.arme) - order.indexOf(b.arme) || a.ab.localeCompare(b.ab, "fr", { numeric: true }))
+    .map(u => `<button type="button" class="item" data-id="${u.id}">${sym(u.arme)}<span class="t"><span class="ab">${u.ab}</span> · ${u.town}<div class="nm">${u.nm}</div></span></button>`).join("");
 }
+elList.addEventListener("click", e => {
+  const b = e.target.closest(".item"); if (!b) return;
+  const u = U[+b.dataset.id];
+  if (window.matchMedia("(max-width: 760px)").matches) closePanel();
+  map.flyTo([u.mlat, u.mlon], Math.max(map.getZoom(), 10), { duration: 0.8 });
+  map.once("moveend", () => openUnit(u));
+});
 
 // Raccourcis géographiques
 const VIEWS = {
@@ -794,7 +1007,7 @@ setZoomClass();
 // Tiroir mobile
 const panel = document.getElementById("panel"), toggle = document.getElementById("toggle");
 function closePanel() { panel.classList.add("closed"); toggle.setAttribute("aria-expanded", "false"); toggle.textContent = "Filtres"; }
-function openPanel() { panel.classList.remove("closed"); toggle.setAttribute("aria-expanded", "true"); toggle.textContent = "Voir la carte"; }
+function openPanel() { panel.classList.remove("closed"); toggle.setAttribute("aria-expanded", "true"); toggle.textContent = "Voir la carte"; buildList(); }
 toggle.addEventListener("click", () => panel.classList.contains("closed") ? openPanel() : closePanel());
 if (window.matchMedia("(max-width: 760px)").matches) closePanel();
 

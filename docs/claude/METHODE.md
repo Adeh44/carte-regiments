@@ -23,6 +23,7 @@ Réponses déduites du fil, à confirmer en quiz au prochain fil :
 - Depuis le conteneur cloud, sengager.fr et wikipedia.org sont bloqués en accès direct : passer par la recherche web avec `allowed_domains: ["sengager.fr"]`.
 - **Toute modification de données se fait dans `src/carte.template.html`**, jamais dans `index.html` (fichier fabriqué).
 - Après chaque changement : `python3 src/build.py`, test hors ligne, puis publication (site + artifact). Voir REFERENCE.md.
+- Adeh veut rester sur git ET garder un lien public partageable (le site GitHub Pages) ; il ne veut pas consommer de crédits cloud inutilement.
 - Adeh a autorisé Claude à pousser sur `carte-regiments` pendant le premier fil. Au début d'un fil, redemander si c'est toujours d'accord (règle § 4 de la méthode).
 
 ## Routine git
@@ -46,4 +47,8 @@ Numérotation : v0.9 = fin du premier fil. C'est Adeh qui déclare la v1.0.
 | Traits droits visibles en outre-mer | Contour des polygones découpés tracé sur les bords de découpe | Remplissage sans contour + côtes en lignes séparées (déjà fait). |
 | Fonds de carte vides dans l'artifact | La CSP de l'artifact bloque les images externes (tuiles OSM) | Fonds vectoriels embarqués, pas de tuiles. |
 | Le shell se tue tout seul | `pkill -f motif` qui correspond à sa propre commande | Tuer par numéro de processus. |
+| Marqueurs collés en pile hors de leur place | `position: relative` ajouté sur `.unit`, qui écrase le `position: absolute` de Leaflet | Ne jamais repositionner les éléments que Leaflet place. |
+| Deux symboles invisibles (ALAT, santé) | SVG en image data: avec un attribut en double : invalide en XML, toléré en HTML | Les symboles passent par `cleanGlyph()`. |
+| Symboles absents malgré la règle CSS | Le `<style>` de la page vient après celui injecté : `.sym` écrasait `.s-inf` | Sélecteur `.sym.s-xxx`. |
+| Publication refusée sur l'artifact | Type `.bin` non servi | Tuiles en `.wasm`. |
 | Données fausses publiées (2e RG dissous en 2010, DLEM devenu 5e RE…) | Données tirées de mémoire ou de Wikipédia | Vérifier chaque unité sur sengager.fr avant ajout. |
