@@ -2,3 +2,5 @@ build/
 __pycache__/
 src/carto/target/
 src/geo/sources/
+o/
+r/

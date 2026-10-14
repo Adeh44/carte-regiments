@@ -1,0 +1,86 @@
+# Fabrique le fond topographique (OpenStreetMap + relief) et le range dans la release « fond ».
+# Lancement : à la main (onglet Actions), le 1er de chaque mois, ou à chaque modification de l'outil sur fond-topo.
+# Rien de tout ça n'utilise de crédit Claude : c'est GitHub qui calcule (gratuit pour un dépôt public).
+name: Fond topographique
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 1 * *'
+  push:
+    branches: [fond-topo]
+    paths: ['src/carto/**', '.github/workflows/fond-topo.yml']
+permissions:
+  contents: write
+concurrency: { group: fond-topo, cancel-in-progress: true }
+jobs:
+  fond:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '21' }
+      - name: Outils
+        run: |
+          curl -sSfL -o planetiler.jar https://github.com/onthegomap/planetiler/releases/download/v0.9.1/planetiler.jar
+          cargo build --release --manifest-path src/carto/Cargo.toml
+          mkdir -p sorties
+      - name: OpenStreetMap — France métropolitaine
+        run: |
+          curl -sSfL -o france.osm.pbf https://download.geofabrik.de/europe/france-latest.osm.pbf
+          set -o pipefail
+          java -Xmx12g -jar planetiler.jar --osm-path=france.osm.pbf --output=france.mbtiles --download \
+            --maxzoom=14 --minzoom=7 --exclude_layers=building,housenumber,poi,aerodrome_label,aeroway,park,boundary,place,transportation_name,water_name \
+            --nodemap-type=sparsearray --storage=mmap 2>&1 | tee sorties/planetiler-france.log | tail -5
+          rm france.osm.pbf
+      - name: OpenStreetMap — outre-mer et étranger (autour des garnisons)
+        run: |
+          G=https://download.geofabrik.de
+          # nom ; extrait Geofabrik ; zone utile (ouest,sud,est,nord)
+          while read nom url bbox; do
+            if curl -sSfL -o "$nom.osm.pbf" "$G/$url"; then
+              java -Xmx12g -jar planetiler.jar --osm-path="$nom.osm.pbf" --output="$nom.mbtiles" --bounds="$bbox" \
+                --maxzoom=14 --minzoom=7 --exclude_layers=building,housenumber,poi,aerodrome_label,aeroway,park,boundary,place,transportation_name,water_name \
+                --nodemap-type=sparsearray --storage=ram >> sorties/planetiler-outremer.log 2>&1 && echo "$nom : ok" >> sorties/outremer.txt || echo "$nom : échec planetiler" >> sorties/outremer.txt
+              rm -f "$nom.osm.pbf"
+            else echo "$nom : extrait introuvable ($url)" >> sorties/outremer.txt; fi
+          done <<'LISTE'
+          guadeloupe europe/france/guadeloupe-latest.osm.pbf -62.0,15.8,-60.9,16.6
+          martinique europe/france/martinique-latest.osm.pbf -61.3,14.3,-60.7,14.95
+          guyane europe/france/guyane-latest.osm.pbf -55.0,1.8,-51.2,6.2
+          reunion europe/france/reunion-latest.osm.pbf 55.1,-21.5,55.95,-20.75
+          mayotte europe/france/mayotte-latest.osm.pbf 44.85,-13.15,45.45,-12.45
+          nouvelle-caledonie australia-oceania/new-caledonia-latest.osm.pbf 163.4,-23.0,168.3,-19.4
+          polynesie australia-oceania/polynesie-francaise-latest.osm.pbf -150.1,-18.0,-149.0,-17.3
+          djibouti africa/djibouti-latest.osm.pbf 41.5,10.7,43.7,13.0
+          emirats asia/gcc-states-latest.osm.pbf 51.3,22.4,56.6,26.4
+          LISTE
+          cat sorties/outremer.txt
+      - name: Conversion au format de la carte (Rust)
+        run: |
+          set -o pipefail
+          ./src/carto/target/release/carto topo fond *.mbtiles 2>&1 | tee sorties/topo.txt
+      - name: Relief (altitudes Terrarium, AWS Open Data)
+        run: |
+          set -o pipefail
+          ./src/carto/target/release/carto relief-liste src/geo/zones.min.json > liste.txt
+          wc -l liste.txt | tee sorties/relief.txt
+          mkdir -p terr
+          xargs -P 32 -I{} sh -c 'mkdir -p terr/$(dirname {}) && curl -sSf --retry 3 -o terr/{}.png https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{}.png || true' < liste.txt
+          ./src/carto/target/release/carto relief terr fond 2>&1 | tee -a sorties/relief.txt
+      - name: Ranger dans la release « fond »
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          du -sh fond/o fond/r | tee -a sorties/topo.txt
+          tar -cf fond.tar -C fond o r
+          gh release view fond >/dev/null 2>&1 || gh release create fond --title "Fond topographique" --notes "Tuiles OSM et relief fabriquées par le workflow Fond topographique. Ne pas supprimer : le site les télécharge." --prerelease
+          gh release upload fond fond.tar --clobber
+      # Résumé lisible par Claude (qui n'a pas accès aux journaux d'Actions)
+      - name: Publier le résumé
+        if: always()
+        run: |
+          mkdir -p sorties && (df -h / ; free -g) > sorties/machine.txt
+          for f in sorties/*.log; do [ -f "$f" ] && tail -60 "$f" > "$f.fin" && rm "$f"; done
+          cd sorties && git init -q && git checkout -q -b fond-topo-sorties
+          git add -A && git -c user.name=actions -c user.email=actions@github.com commit -qm "Fond ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" fond-topo-sorties
