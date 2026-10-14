@@ -502,7 +502,7 @@ const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 16, worldCopyJump: 
 window.__map = map;
 map.attributionControl.setPrefix(false);
 // Numéro de version affiché : à augmenter à chaque publication (sert à vérifier la version reçue sur le téléphone).
-const VERSION = "v0.13";
+const VERSION = "v0.14";
 map.attributionControl.addAttribution(VERSION + " · © contributeurs OpenStreetMap, OpenMapTiles · IGN (Admin Express) · Natural Earth · relief : AWS Terrain Tiles · villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
@@ -663,12 +663,14 @@ function strokeLayer(ctx, p, st) {
   ctx.lineJoin = round ? "round" : "bevel"; ctx.lineCap = round ? "round" : "butt";
   ctx.globalAlpha = st.a || 1; ctx.strokeStyle = st.s; ctx.lineWidth = st.w; ctx.setLineDash(st.d || []); ctx.stroke(p);
 }
-function drawRelief(ctx, rel, x, y) {
+function drawRelief(ctx, rel, x, y, zoomRel) {
   if (!rel) return Promise.resolve();
   return createImageBitmap(new Blob([rel.u.subarray(rel.off, rel.off + rel.len)])).then(img => () => {
     // Tuile d'un zoom inférieur : on n'en prend que la partie qui couvre cette tuile, agrandie en douceur
     const n = img.width / rel.s, sx = (x - rel.ax * rel.s) * n, sy = (y - rel.ay * rel.s) * n;
+    // Ombrage plus discret en vue lointaine (sinon les massifs écrasent tout le reste)
     ctx.save(); ctx.globalCompositeOperation = "multiply"; ctx.imageSmoothingQuality = "high";
+    ctx.globalAlpha = zoomRel <= 8 ? 0.5 : zoomRel <= 10 ? 0.62 : 0.75;
     ctx.drawImage(img, sx, sy, n, n, 0, 0, 256, 256);
     ctx.restore(); img.close();
   });
@@ -730,7 +732,7 @@ const MapLayer = L.GridLayer.extend({
     // l'ancien dessin en attente ne doit jamais s'y peindre (sinon morceaux de carte mélangés).
     const key = t._key = ++tileSeq;
     const ctx = t.getContext("2d");
-    const rel = c.z >= 5 ? findTile(RELIEF, c.z, c.x, c.y).then(r => drawRelief(ctx, r, c.x, c.y)).catch(() => null) : null;
+    const rel = c.z >= 5 ? findTile(RELIEF, c.z, c.x, c.y).then(r => drawRelief(ctx, r, c.x, c.y, c.z)).catch(() => null) : null;
     Promise.all([findTile(BASE, c.z, c.x, c.y), c.z >= 7 ? findTile(TOPO, c.z, c.x, c.y) : null, rel, spritesReady, fontsReady]).then(([b, o, r]) => schedule(() => {
       if (t._key !== key) return;
       // Niveau de zoom déjà quitté : inutile de dessiner, on libère la file pour le niveau affiché.

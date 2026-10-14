@@ -4,11 +4,13 @@ Réécrit en entier le 2026-10-14.
 
 ## État réel
 
-- Version : **v0.13** (unités regroupées selon le zoom ; numéro affiché en bas de la carte)
-- Chantier en cours sur la branche `fond-topo` : vrai fond topographique (OSM + relief), phase 0 = mesure du poids. (fond Rust en tuiles, optimisation mobile, correctif zooms rapides et mises à jour), poussée sur `main` de `Adeh44/carte-regiments`.
+- Version : **v0.14** : fond topographique OSM + relief (France, outre-mer, Djibouti, Émirats), zoom max 16, unités regroupées.
+- L'artifact Claude est abandonné (trop lourd) : seul le site compte.
+- Publication par GitHub Actions (réglage Pages > Source = GitHub Actions, fait par Adeh). (fond Rust en tuiles, optimisation mobile, correctif zooms rapides et mises à jour), poussée sur `main` de `Adeh44/carte-regiments`.
 - Site public : https://adeh44.github.io/carte-regiments/ — artifact privé : https://claude.ai/artifact/UbpoP14fi3tASNN2s3XXWu
 - Contenu inchangé : 186 unités + 11 camps.
-- Non vérifié : fluidité sur le Xiaomi Note 14 d'Adeh, mode avion sur iPhone avec les nouvelles tuiles.
+- Non vérifié : fluidité du fond topo sur le Xiaomi Note 14 d'Adeh (simulé : pire blocage ~0,3-0,6 s à Paris z14).
+- Pistes si trop lourd : chemins (z14) et ruisseaux (z13) sont les plus gros postes ; voir REFERENCE « Fond topographique ».
 
 ## Programme
 
