@@ -121,7 +121,7 @@ Les camps sont dans le tableau `CAMPS` : [nom, lat, lon, surface en hectares].
 ## Dettes ouvertes (infos à confirmer)
 
 - 1er GI BMAINT (camp des Garrigues) : nom tiré de Wikipédia et d'un forum.
-- 6e GIM (Gap) : confirmé seulement par Wikipédia, absent de la liste officielle de novembre 2025 (18e RIT Dieuze, lui, y figure).
+- 6e GIM (Gap) : intégré au 4e RCh (information d'Adeh, 20/10/2026), d'où son absence de la liste officielle.
 - CFA Tigre (Faßberg) : nom exact à confirmer (« CFA PTL » dans la liste officielle).
 - 12e BSMAT, détachement du Mans : cité par la seule fiche officielle récente.
 - 8e RT : rattachement au Commissariat au numérique de défense, une seule source.
