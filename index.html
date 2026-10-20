@@ -928,7 +928,8 @@ const TAGS = {
   reserve: "Réserve",
   site: "Bases et détachements",
   musique: "Musiques militaires",
-  lycee: "Lycées militaires"
+  lycee: "Lycées militaires",
+  recrutement: "Recrutement"
 };
 const ZONES = { metro: "Métropole", om: "Outre-mer", etr: "Étranger" };
 
@@ -957,7 +958,7 @@ const U = [
  ["1er RPIMa","1er régiment de parachutistes d'infanterie de marine","inf",["fs","para","marine"],"Bayonne","Pyrénées-Atlantiques",43.493,-1.475,"Commandement des actions spéciales Terre","Forces spéciales"],
  ["1er RE","1er régiment étranger","inf",["legion"],"Aubagne","Bouches-du-Rhône",43.292,5.57,"Commandement de la Légion étrangère","Maison mère de la Légion"],
  ["4e RE","4e régiment étranger","inf",["legion"],"Castelnaudary","Aude",43.318,1.954,"Commandement de la Légion étrangère","Formation des légionnaires"],
- ["24e RI","24e régiment d'infanterie","inf",["reserve"],"Vincennes","Val-de-Marne",48.843,2.436,"Commandement de la logistique","Régiment de réservistes d'Île-de-France"],
+ ["24e RI","24e régiment d'infanterie","inf",["reserve"],"Versailles","Yvelines",48.8,2.13,"Commandement de la logistique","Régiment de réservistes d'Île-de-France (localité de la liste officielle de novembre 2025)"],
  ["3e REI","3e régiment étranger d'infanterie","inf",["legion"],"Kourou","Guyane",5.159,-52.649,"Forces armées en Guyane","Protection du centre spatial, combat en forêt","om"],
  ["9e RIMa","9e régiment d'infanterie de marine","inf",["marine"],"Cayenne","Guyane",4.938,-52.326,"Forces armées en Guyane","Lutte contre l'orpaillage illégal","om"],
  ["33e RIMa","33e régiment d'infanterie de marine","inf",["marine"],"Fort-de-France","Martinique",14.607,-61.07,"Forces armées aux Antilles","Infanterie","om"],
@@ -1178,7 +1179,25 @@ const U = [
  ["EMIA FAZSOI","État-major interarmées des forces armées dans la zone sud de l'océan Indien","em",[],"Saint-Denis","La Réunion",-20.88,55.45,"","Commande les forces de La Réunion et de Mayotte","om"],
  ["EMIA FANC","État-major interarmées des forces armées de Nouvelle-Calédonie","em",[],"Nouméa","Nouvelle-Calédonie",-22.27,166.44,"","Commande les forces armées de Nouvelle-Calédonie","om"],
  ["EMIA FAPF","État-major interarmées des forces armées en Polynésie française","em",[],"Arue (Tahiti)","Polynésie française",-17.52,-149.53,"","Commande les forces armées en Polynésie","om"],
- ["EMIA FFDj","État-major interarmées des forces françaises stationnées à Djibouti","em",[],"Djibouti","Djibouti",11.574,43.15,"","Commande les forces françaises à Djibouti","etr"]
+ ["EMIA FFDj","État-major interarmées des forces françaises stationnées à Djibouti","em",[],"Djibouti","Djibouti",11.574,43.15,"","Commande les forces françaises à Djibouti","etr"],
+ /* Détachements et organismes relevés dans la liste officielle de novembre 2025 (BOA n° 85) */
+ ["DLIA Côte d'Ivoire","Détachement de liaison interarmées en Côte d'Ivoire","em",["marine","site"],"Abidjan","Côte d'Ivoire",5.32,-4.02,"","A remplacé le 43e BIMa après la remise de la base aux autorités ivoiriennes (2025)","etr"],
+ ["DLIA Gabon","Détachement de liaison interarmées au Gabon","em",["marine","site"],"Libreville","Gabon",0.39,9.45,"","A remplacé le 6e BIMa, camp partagé avec les forces gabonaises (2025)","etr"],
+ ["DAAT","Détachement avions de l'armée de Terre","alat",["site"],"Saint-Jacques-de-la-Lande","Ille-et-Vilaine",48.07,-1.73,"Commandement de l'aviation légère de l'armée de Terre","Avions de transport léger et de renseignement de l'armée de Terre"],
+ ["DSNFR CRR-E","Détachement de soutien national français du Corps européen","em",["site"],"Strasbourg","Bas-Rhin",48.583,7.75,"Corps européen (Eurocorps)","Soutien des militaires français affectés au Corps européen"],
+ ["BCS BFA","Bataillon de commandement et de soutien de la brigade franco-allemande","sou",["site"],"Müllheim","Allemagne",47.808,7.63,"Brigade franco-allemande","Commandement, transmissions et soutien de la brigade","etr"],
+ ["CPIS","Centre parachutiste d'instruction spécialisée","inf",["fs","para"],"Perpignan","Pyrénées-Orientales",42.69,2.89,"","Centre d'entraînement du service Action (personnel de l'armée de Terre)"],
+ ["CPES","Centre parachutiste d'entraînement spécialisé","inf",["fs","para"],"Saran (Orléans)","Loiret",47.95,1.876,"","Centre d'entraînement du service Action (personnel de l'armée de Terre)"],
+ ["CPEOM","Centre parachutiste d'entraînement aux opérations maritimes","inf",["fs","para"],"Roscanvel","Finistère",48.32,-4.55,"","Centre d'entraînement du service Action (personnel de l'armée de Terre)"],
+ ["EDD","École des drones","art",["ecole","rens"],"Chaumont","Haute-Marne",48.111,5.14,"19e brigade d'artillerie","Formation des opérateurs de drones de l'armée de Terre"],
+ ["CNSD","Centre national des sports de la Défense","ia",["ecole"],"Fontainebleau","Seine-et-Marne",48.404,2.7,"","Formation des moniteurs et instructeurs sportifs militaires, sportifs de haut niveau de la Défense"],
+ ["CMFP","Centre militaire de formation professionnelle","ia",["ecole"],"Fontenay-le-Comte","Vendée",46.466,-0.806,"","Formation professionnelle des militaires en reconversion"],
+ ["CFA Tigre","Centre de formation franco-allemand Tigre","alat",["ecole"],"Faßberg","Allemagne",52.9,10.18,"","Formation franco-allemande sur l'hélicoptère Tigre (nom exact à confirmer : « CFA PTL » dans la liste officielle)","etr"],
+ ["GRS NE","Groupement de recrutement et de sélection Nord-Est","ia",["recrutement"],"Vandœuvre-lès-Nancy","Meurthe-et-Moselle",48.66,6.17,"","Recrutement et sélection des futurs soldats"],
+ ["GRS NO","Groupement de recrutement et de sélection Nord-Ouest","ia",["recrutement"],"Saint-Jacques-de-la-Lande","Ille-et-Vilaine",48.09,-1.72,"","Recrutement et sélection des futurs soldats"],
+ ["GRS SO","Groupement de recrutement et de sélection Sud-Ouest","ia",["recrutement"],"Bordeaux","Gironde",44.84,-0.58,"","Recrutement et sélection des futurs soldats"],
+ ["GRS SE","Groupement de recrutement et de sélection Sud-Est","ia",["recrutement"],"Lyon","Rhône",45.75,4.85,"","Recrutement et sélection des futurs soldats"],
+ ["GRS IDF OM","Groupement de recrutement et de sélection Île-de-France et outre-mer","ia",["recrutement"],"Rueil-Malmaison","Hauts-de-Seine",48.877,2.18,"","Recrutement et sélection des futurs soldats"]
 ].map((r, i) => ({ id: i, ab: r[0], nm: r[1], arme: r[2], tags: r[3], town: r[4], dep: r[5], lat: r[6], lon: r[7], bde: r[8], role: r[9], zone: r[10] || "metro" }));
 
 // Grands camps d'entraînement : [nom, lat, lon, surface en hectares (arrondie)]
@@ -1238,7 +1257,7 @@ const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 16, worldCopyJump: 
 window.__map = map;
 map.attributionControl.setPrefix(false);
 // Numéro de version affiché : à augmenter à chaque publication (sert à vérifier la version reçue sur le téléphone).
-const VERSION = "v0.15";
+const VERSION = "v0.16";
 map.attributionControl.addAttribution(VERSION + " · © contributeurs OpenStreetMap, OpenMapTiles · IGN (Admin Express) · Natural Earth · relief : AWS Terrain Tiles · villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 

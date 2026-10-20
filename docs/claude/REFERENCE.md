@@ -4,7 +4,7 @@ Ce que le projet est. Mis à jour le 2026-10-14 (v0.14).
 
 ## Le produit
 
-Carte interactive des implantations de l'Armée de terre : 47 états-majors (v0.15) + 186 unités (régiments, centres, écoles,
+Carte interactive des implantations de l'Armée de terre : 47 états-majors + 203 unités, centres et détachements (v0.16) (régiments, centres, écoles,
 groupements d'instruction, bases du matériel, détachements, musiques, lycées) + 11 grands camps.
 
 | Accès | Adresse | Public |
@@ -82,7 +82,9 @@ Les camps sont dans le tableau `CAMPS` : [nom, lat, lon, surface en hectares].
 
 - Liste de référence pour les implantations : arrêté du 1er novembre 2025 fixant, au sein de l'armée de terre, la liste des
   autorités militaires (BOA n° 85 du 7 novembre 2025, defense.gouv.fr). Une ligne par localité avec tous les organismes.
-  États-majors ajoutés en v0.15 d'après ce texte (COMALAT y est à Metz, CAST à Uzein, 19e BART à La Valbonne).
+  États-majors (v0.15), détachements d'états-majors, centres oubliés et recrutement (v0.16) ajoutés d'après ce texte ;
+  24e RI déplacé à Versailles. Pas encore ajoutées : les ~100 délégations militaires départementales (interarmées).
+  (COMALAT y est à Metz, CAST à Uzein, 19e BART à La Valbonne).
 
 - Unités : sengager.fr d'abord, puis defense.gouv.fr, Bulletin officiel des armées (BOA), presse spécialisée.
 - Noms 2025 : depuis le 1er juillet 2025, les centres ont perdu leur double appellation
@@ -120,7 +122,7 @@ Les camps sont dans le tableau `CAMPS` : [nom, lat, lon, surface en hectares].
 
 - 1er GI BMAINT (camp des Garrigues) : nom tiré de Wikipédia et d'un forum.
 - 6e GIM (Gap) : confirmé seulement par Wikipédia, absent de la liste officielle de novembre 2025 (18e RIT Dieuze, lui, y figure).
-- 24e RI : la liste officielle de novembre 2025 le place à Versailles (« BAT RES IDF - 24 RI »), la carte à Vincennes. À trancher.
+- CFA Tigre (Faßberg) : nom exact à confirmer (« CFA PTL » dans la liste officielle).
 - 12e BSMAT, détachement du Mans : cité par la seule fiche officielle récente.
 - 8e RT : rattachement au Commissariat au numérique de défense, une seule source.
 - 17e GA : sengager.fr dit « groupe », d'autres sources « 17e RA » depuis 2025.

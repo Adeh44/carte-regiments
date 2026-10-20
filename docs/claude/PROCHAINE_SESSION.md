@@ -4,7 +4,7 @@ Réécrit en entier le 2026-10-14.
 
 ## État réel
 
-- Version : **v0.14** : fond topographique OSM + relief (France, outre-mer, Djibouti, Émirats), zoom max 16, unités regroupées.
+- Version : **v0.16** (états-majors, détachements, recrutement) sur la base de la v0.14 : fond topographique OSM + relief (France, outre-mer, Djibouti, Émirats), zoom max 16, unités regroupées.
 - L'artifact Claude est abandonné (trop lourd) : seul le site compte.
 - Publication par GitHub Actions (réglage Pages > Source = GitHub Actions, fait par Adeh). (fond Rust en tuiles, optimisation mobile, correctif zooms rapides et mises à jour), poussée sur `main` de `Adeh44/carte-regiments`.
 - Site public : https://adeh44.github.io/carte-regiments/ — artifact privé : https://claude.ai/artifact/UbpoP14fi3tASNN2s3XXWu
