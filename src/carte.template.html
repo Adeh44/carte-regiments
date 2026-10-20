@@ -567,13 +567,15 @@ function visible(u) {
 }
 
 // Carte
-const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 16, worldCopyJump: true, attributionControl: true, fadeAnimation: false });
+const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 16, worldCopyJump: true, attributionControl: true, fadeAnimation: false, zoomControl: false });
 window.__map = map;
 map.attributionControl.setPrefix(false);
 // Numéro de version affiché : à augmenter à chaque publication (sert à vérifier la version reçue sur le téléphone).
-const VERSION = "v0.17";
+const VERSION = "v0.18";
 map.attributionControl.addAttribution(VERSION + " · © contributeurs OpenStreetMap, OpenMapTiles · IGN (Admin Express) · Natural Earth · relief : AWS Terrain Tiles · villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
+// Zoom en bas à droite, au-dessus de l'échelle : à portée du pouce (Leaflet empile vers le haut dans les coins du bas)
+L.control.zoom({ position: "bottomright", zoomInTitle: "Zoomer", zoomOutTitle: "Dézoomer" }).addTo(map);
 
 // Couleurs du thème, lues une seule fois (getComputedStyle coûte cher sur petit téléphone).
 const COL = {};
