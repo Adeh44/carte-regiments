@@ -31,7 +31,8 @@ Réponses déduites du fil, à confirmer en quiz au prochain fil :
 1. `git status` et `git diff --stat`, lus.
 2. Commit `vX.YY : description`, puis `git push origin main`. Lire la ligne `main -> main`.
 3. Vérifier le déploiement : `gh run list -R Adeh44/carte-regiments -L 3` (workflow « Site »). Le site `adeh44.github.io` n'est pas joignable depuis le conteneur.
-4. Le fond topo se refait avec le workflow « Fond topographique » (~45 min, gratuit). Ne pas le relancer pour un simple changement de la page.
+4. Après chaque mise à jour publiée, redonner le lien du site à Adeh : https://adeh44.github.io/carte-regiments/ (demande d'Adeh, 20/10/2026).
+5. Le fond topo se refait avec le workflow « Fond topographique » (~45 min, gratuit). Ne pas le relancer pour un simple changement de la page.
 
 Numérotation : v0.9 = fin du premier fil. Augmenter la constante `VERSION` du gabarit à chaque publication (affichée en bas de la carte). C'est Adeh qui déclare la v1.0.
 
