@@ -699,7 +699,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --halo: rgba(246,247,241,.9);
   --c-inf: #b8322a; --c-cav: #2c64a8; --c-art: #c47a00; --c-gen: #4b4636;
   --c-trs: #6b4ea2; --c-trn: #2b7a4b; --c-mat: #5d7385; --c-alat: #0f8d9a;
-  --c-sou: #b8417f; --c-sma: #8a6a12; --c-ia: #8d5a2b;
+  --c-sou: #b8417f; --c-sma: #8a6a12; --c-ia: #8d5a2b; --c-em: #26303f;
   --river: #7fa6c2; --road: #d49a5c; --road2: #cbb894; --city: #6d7363; --city-soft: #8d9283; --city-halo: #f3f2e6;
   --forest: #cfe2b1; --wetland: #d9e8e2; --rock: #e4e0d8; --ice: #f1f7fb; --sand: #f2e8c6; --urban: #ebe3d9; --indus: #e1dcd7; --military: #f2cfc5; --water: #c6d4d6;
   --motorway: #e3534a; --trunk: #ee8a3c; --primary: #f4b245; --secondary: #f8d765; --tertiary: #fcf0a8; --minor: #ffffff; --casing: #9a8f7c; --track: #93734c; --path: #5d5246; --rail: #5f5f5f;
@@ -713,7 +713,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --accent: #b9c98f; --accent-ink: #18200f; --chip: #262e29; --halo: rgba(27,33,30,.92);
   --c-inf: #e5615a; --c-cav: #6aa3e8; --c-art: #e8a23a; --c-gen: #b9b190;
   --c-trs: #a98ae0; --c-trn: #55b67b; --c-mat: #93a9bb; --c-alat: #3fc3cf;
-  --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62;
+  --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62; --c-em: #a9bad1;
   --river: #3f6f8c; --road: #8f6a42; --road2: #574f40; --city: #a4ab98; --city-soft: #7f8775; --city-halo: #2c3530;
   --forest: #23382a; --wetland: #22332f; --rock: #353633; --ice: #3b4247; --sand: #3a3527; --urban: #333a35; --indus: #353836; --military: #4a2f2c; --water: #0f1517;
   --motorway: #c4483f; --trunk: #c27236; --primary: #b38a3a; --secondary: #8f7d45; --tertiary: #6d6648; --minor: #565c57; --casing: #1a1f1c; --track: #8a7253; --path: #a3988a; --rail: #8d918b;
@@ -725,7 +725,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --accent: #b9c98f; --accent-ink: #18200f; --chip: #262e29; --halo: rgba(27,33,30,.92);
   --c-inf: #e5615a; --c-cav: #6aa3e8; --c-art: #e8a23a; --c-gen: #b9b190;
   --c-trs: #a98ae0; --c-trn: #55b67b; --c-mat: #93a9bb; --c-alat: #3fc3cf;
-  --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62;
+  --c-sou: #e57ab3; --c-sma: #d0ad4c; --c-ia: #cf9a62; --c-em: #a9bad1;
   --river: #3f6f8c; --road: #8f6a42; --road2: #574f40; --city: #a4ab98; --city-soft: #7f8775; --city-halo: #2c3530;
   --forest: #23382a; --wetland: #22332f; --rock: #353633; --ice: #3b4247; --sand: #3a3527; --urban: #333a35; --indus: #353836; --military: #4a2f2c; --water: #0f1517;
   --motorway: #c4483f; --trunk: #c27236; --primary: #b38a3a; --secondary: #8f7d45; --tertiary: #6d6648; --minor: #565c57; --casing: #1a1f1c; --track: #8a7253; --path: #a3988a; --rail: #8d918b;
@@ -854,7 +854,7 @@ h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-heig
         <div class="group-h"><h2>Unités</h2></div>
         <div class="list" id="list"></div>
       </div>
-      <p class="note">Arme et spécialité se cumulent : « Infanterie » + « Troupes de montagne » donne les bataillons de chasseurs alpins. Sans arme cochée, toutes les armes sont visibles. Depuis le 1er juillet 2025, les centres portent le nom de leur régiment : le CENZUB est devenu le 94e RI, le CAPCIA le 51e RI, le CENTAC le 1er BCP, le CNEC le 1er régiment de choc. L'ancien sigle reste cherchable. Garnisons publiques, placées à l'échelle de la ville, d'après des sources ouvertes à jour en 2026. Une erreur reste possible.</p>
+      <p class="note">Arme et spécialité se cumulent : « Infanterie » + « Troupes de montagne » donne les bataillons de chasseurs alpins. Sans arme cochée, toutes les armes sont visibles. Depuis le 1er juillet 2025, les centres portent le nom de leur régiment : le CENZUB est devenu le 94e RI, le CAPCIA le 51e RI, le CENTAC le 1er BCP, le CNEC le 1er régiment de choc. L'ancien sigle reste cherchable. Les états-majors suivent la liste officielle de novembre 2025 (Bulletin officiel des armées). Garnisons publiques, placées à l'échelle de la ville, d'après des sources ouvertes à jour en 2026. Une erreur reste possible.</p>
     </div>
   </aside>
   <div class="mapwrap">
@@ -899,6 +899,7 @@ const META = {"bundles":["2_0_0","3_0_0","4_0_1","4_0_2","4_0_3","4_0_4","4_0_5"
 
 // Armes : couleur (token CSS) + glyphe dessiné dans le cadre d'unité, façon symbole OTAN.
 const ARMES = {
+  em:   { label: "États-majors" },
   inf:  { label: "Infanterie" },
   cav:  { label: "Cavalerie (blindés)" },
   art:  { label: "Artillerie" },
@@ -953,7 +954,7 @@ const U = [
  ["3e RPIMa","3e régiment de parachutistes d'infanterie de marine","inf",["para","marine"],"Carcassonne","Aude",43.212,2.353,"11e brigade parachutiste","Infanterie parachutiste"],
  ["8e RPIMa","8e régiment de parachutistes d'infanterie de marine","inf",["para","marine"],"Castres","Tarn",43.606,2.241,"11e brigade parachutiste","Infanterie parachutiste"],
  ["2e REP","2e régiment étranger de parachutistes","inf",["para","legion"],"Calvi","Haute-Corse",42.566,8.757,"11e brigade parachutiste","Seul régiment parachutiste de la Légion"],
- ["1er RPIMa","1er régiment de parachutistes d'infanterie de marine","inf",["fs","para","marine"],"Bayonne","Pyrénées-Atlantiques",43.493,-1.475,"Commandement des forces spéciales Terre","Forces spéciales"],
+ ["1er RPIMa","1er régiment de parachutistes d'infanterie de marine","inf",["fs","para","marine"],"Bayonne","Pyrénées-Atlantiques",43.493,-1.475,"Commandement des actions spéciales Terre","Forces spéciales"],
  ["1er RE","1er régiment étranger","inf",["legion"],"Aubagne","Bouches-du-Rhône",43.292,5.57,"Commandement de la Légion étrangère","Maison mère de la Légion"],
  ["4e RE","4e régiment étranger","inf",["legion"],"Castelnaudary","Aude",43.318,1.954,"Commandement de la Légion étrangère","Formation des légionnaires"],
  ["24e RI","24e régiment d'infanterie","inf",["reserve"],"Vincennes","Val-de-Marne",48.843,2.436,"Commandement de la logistique","Régiment de réservistes d'Île-de-France"],
@@ -978,7 +979,7 @@ const U = [
  ["RICM","Régiment d'infanterie-chars de marine","cav",["marine"],"Poitiers","Vienne",46.58,0.34,"9e brigade d'infanterie de marine","Blindés à roues (Jaguar)"],
  ["1er RIMa","1er régiment d'infanterie de marine","cav",["marine"],"Angoulême","Charente",45.648,0.156,"9e brigade d'infanterie de marine","Blindés à roues (Jaguar)"],
  ["2e RH","2e régiment de hussards","cav",["rens"],"Haguenau","Bas-Rhin",48.816,7.79,"Brigade de renseignement et cyber-électronique","Recherche humaine du renseignement"],
- ["13e RDP","13e régiment de dragons parachutistes","cav",["fs","para","rens"],"Martignas-sur-Jalle","Gironde",44.84,-0.78,"Commandement des forces spéciales Terre","Forces spéciales, renseignement en profondeur"],
+ ["13e RDP","13e régiment de dragons parachutistes","cav",["fs","para","rens"],"Martignas-sur-Jalle","Gironde",44.84,-0.78,"Commandement des actions spéciales Terre","Forces spéciales, renseignement en profondeur"],
  ["2e RD","2e régiment de dragons","cav",["nrbc"],"Fontevraud-l'Abbaye","Maine-et-Loire",47.18,0.05,"Brigade du génie","Défense nucléaire, radiologique, biologique et chimique"],
  ["132e RIC","132e régiment d'infanterie cynotechnique","inf",[],"Suippes","Marne",49.13,4.53,"Brigade du génie","Combat avec chiens : environ 600 soldats et 500 chiens"],
  ["1er RCA","1er régiment de chasseurs d'Afrique","cav",["centre"],"Montferrat (camp de Canjuers)","Var",43.616,6.483,"Commandement de l'entraînement au combat interarmes","Centre d'entraînement : formation des tireurs, pilotes et chefs d'engins blindés, gestion du camp de Canjuers"],
@@ -1038,7 +1039,7 @@ const U = [
  ["3e RHC","3e régiment d'hélicoptères de combat","alat",[],"Étain","Meuse",49.21,5.64,"4e brigade d'aérocombat","Hélicoptères, spécialiste du vol de nuit"],
  ["5e RHC","5e régiment d'hélicoptères de combat","alat",[],"Pau","Pyrénées-Atlantiques",43.38,-0.42,"4e brigade d'aérocombat","Hélicoptères de combat"],
  ["9e RSAM","9e régiment de soutien aéromobile","alat",[],"Montauban","Tarn-et-Garonne",44.02,1.35,"4e brigade d'aérocombat","Maintenance des hélicoptères"],
- ["4e RHFS","4e régiment d'hélicoptères des forces spéciales","alat",["fs"],"Pau","Pyrénées-Atlantiques",43.38,-0.42,"Commandement des forces spéciales Terre","Hélicoptères des forces spéciales"],
+ ["4e RHFS","4e régiment d'hélicoptères des forces spéciales","alat",["fs"],"Pau","Pyrénées-Atlantiques",43.38,-0.42,"Commandement des actions spéciales Terre","Hélicoptères des forces spéciales"],
 
  ["RMED","Régiment médical","sou",[],"La Valbonne","Ain",45.85,5.13,"Brigade logistique","Déploiement des hôpitaux de campagne"],
  ["14e RISLP","14e régiment d'infanterie et de soutien logistique parachutiste","sou",["para"],"Toulouse","Haute-Garonne",43.603,1.444,"Brigade logistique","Soutien logistique des troupes aéroportées, évacuation des ressortissants"],
@@ -1129,7 +1130,55 @@ const U = [
  ["LM Autun","Lycée militaire d'Autun","ia",["lycee"],"Autun","Saône-et-Loire",46.95,4.3,"","Lycée et classes préparatoires, internat"],
  ["LM Aix","Lycée militaire d'Aix-en-Provence","ia",["lycee"],"Aix-en-Provence","Bouches-du-Rhône",43.53,5.45,"","Lycée et classes préparatoires, internat"],
  ["LM Saint-Cyr","Lycée militaire de Saint-Cyr-l'École","ia",["lycee"],"Saint-Cyr-l'École","Yvelines",48.8,2.06,"","Lycée et classes préparatoires, internat"],
- ["PNM","Prytanée national militaire","ia",["lycee"],"La Flèche","Sarthe",47.7,-0.08,"","Lycée et classes préparatoires, internat"]
+ ["PNM","Prytanée national militaire","ia",["lycee"],"La Flèche","Sarthe",47.7,-0.08,"","Lycée et classes préparatoires, internat"],
+ /* États-majors : localités de l'arrêté du 1er novembre 2025 (BOA n° 85 du 7 novembre 2025) */
+ ["EMAT","État-major de l'armée de Terre","em",[],"Paris (Balard)","Paris",48.835,2.279,"","Commandement de l'armée de Terre, autour du chef d'état-major (CEMAT)"],
+ ["IAT","Inspection de l'armée de Terre","em",[],"Paris","Paris",48.851,2.305,"État-major de l'armée de Terre","Contrôle et évaluation des unités"],
+ ["CCF","Commandement du combat futur","em",[],"Paris","Paris",48.851,2.305,"État-major de l'armée de Terre","Doctrine, retours d'expérience, préparation des capacités futures"],
+ ["DRHAT","Direction des ressources humaines de l'armée de Terre","em",[],"Tours","Indre-et-Loire",47.394,0.684,"État-major de l'armée de Terre","Recrutement, formation et gestion du personnel (direction à Paris, état-major à Tours)"],
+ ["PFORM","Commandement du pôle formation","em",["ecole"],"Tours","Indre-et-Loire",47.394,0.684,"Direction des ressources humaines de l'armée de Terre","Commandement des écoles de l'armée de Terre"],
+ ["SIMMT","Structure intégrée du maintien en condition opérationnelle des matériels terrestres","em",[],"Versailles","Yvelines",48.8,2.13,"État-major de l'armée de Terre","Pilotage de l'entretien de tous les matériels terrestres"],
+ ["SMITer","Service de la maintenance industrielle terrestre","em",[],"Versailles","Yvelines",48.8,2.13,"","Commande les bases de soutien du matériel (BSMAT)"],
+ ["CFOT","Commandement de la force et des opérations terrestres","em",[],"Lille","Nord",50.641,3.045,"État-major de l'armée de Terre","Commande la force opérationnelle terrestre (ex-CFT, renommé en 2024)"],
+ ["CTE","Commandement Terre pour l'Europe","em",[],"Lille","Nord",50.641,3.045,"Commandement de la force et des opérations terrestres","Commandement des unités de l'armée de Terre engagées en Europe, créé en 2023, installé au sein du CFOT"],
+ ["CRR-E","Corps européen (Eurocorps)","em",[],"Strasbourg","Bas-Rhin",48.583,7.75,"","État-major de corps multinational (Allemagne, Belgique, Espagne, France, Luxembourg, Pologne)"],
+ ["CRR-Fr","Corps de réaction rapide – France","em",[],"Lille","Nord",50.641,3.045,"Commandement de la force et des opérations terrestres","État-major de corps d'armée certifié OTAN"],
+ ["1re DIV","1re division","em",[],"Besançon","Doubs",47.24,6.02,"Commandement de la force et des opérations terrestres","Division « Europe »"],
+ ["3e DIV","3e division","em",[],"Marseille","Bouches-du-Rhône",43.296,5.38,"Commandement de la force et des opérations terrestres","Division « Monde »"],
+ ["CAPR","Commandement de l'appui et du renseignement dans la profondeur","em",["rens"],"Strasbourg","Bas-Rhin",48.583,7.75,"Commandement de la force et des opérations terrestres","Renseignement, feux et aérocombat dans la profondeur (créé en 2024)"],
+ ["CALT","Commandement de l'appui et de la logistique de théâtre","em",[],"Lille","Nord",50.641,3.045,"Commandement de la force et des opérations terrestres","Logistique, maintenance et génie de théâtre (créé en 2024)"],
+ ["CATNC","Commandement de l'appui terrestre numérique et cyber","em",["cyber"],"Cesson-Sévigné","Ille-et-Vilaine",48.12,-1.6,"Commandement de la force et des opérations terrestres","Transmissions, numérique et cyber"],
+ ["CAST","Commandement des actions spéciales Terre","em",["fs"],"Uzein (Pau)","Pyrénées-Atlantiques",43.4,-0.43,"Commandement de la force et des opérations terrestres","Forces spéciales Terre (ex-COM FST, renommé en 2024)"],
+ ["COMECIA","Commandement de l'entraînement et des écoles du combat interarmes","em",["centre"],"Mourmelon-le-Grand","Marne",49.133,4.363,"Commandement de la force et des opérations terrestres","Commande les centres d'entraînement au combat"],
+ ["COMLE","Commandement de la Légion étrangère","em",["legion"],"Aubagne","Bouches-du-Rhône",43.292,5.57,"","Commande la Légion étrangère"],
+ ["COMALAT","Commandement de l'aviation légère de l'armée de Terre","em",[],"Metz","Moselle",49.12,6.177,"","Aviation légère de l'armée de Terre (anciennement à Villacoublay)"],
+ ["2e BB","État-major de la 2e brigade blindée","em",[],"Strasbourg","Bas-Rhin",48.583,7.75,"3e division","Héritière de la 2e DB du général Leclerc"],
+ ["7e BB","État-major de la 7e brigade blindée","em",[],"Besançon","Doubs",47.24,6.02,"1re division","Brigade blindée"],
+ ["6e BLB","État-major de la 6e brigade légère blindée","em",[],"Nîmes","Gard",43.836,4.36,"3e division","Brigade légère blindée"],
+ ["9e BIMa","État-major de la 9e brigade d'infanterie de marine","em",["marine"],"Poitiers","Vienne",46.58,0.34,"","Brigade d'infanterie de marine"],
+ ["11e BP","État-major de la 11e brigade parachutiste","em",["para"],"Balma (Toulouse)","Haute-Garonne",43.611,1.499,"","Brigade parachutiste"],
+ ["27e BIM","État-major de la 27e brigade d'infanterie de montagne","em",["montagne"],"Varces","Isère",45.093,5.682,"1re division","Brigade de montagne"],
+ ["BFA","État-major de la brigade franco-allemande","em",[],"Müllheim","Allemagne",47.808,7.63,"","Brigade binationale franco-allemande","etr"],
+ ["4e BAC","État-major de la 4e brigade d'aérocombat","em",[],"Clermont-Ferrand","Puy-de-Dôme",45.78,3.09,"Commandement de l'appui et du renseignement dans la profondeur","Hélicoptères de combat"],
+ ["19e BART","État-major de la 19e brigade d'artillerie","em",[],"La Valbonne (Béligneux)","Ain",45.85,5.13,"Commandement de l'appui et du renseignement dans la profondeur","Artillerie, défense sol-air et drones"],
+ ["BRCE","État-major de la brigade de renseignement et cyber-électronique","em",["rens","cyber"],"Strasbourg","Bas-Rhin",48.583,7.75,"Commandement de l'appui et du renseignement dans la profondeur","Renseignement et guerre électronique"],
+ ["BANC","État-major de la brigade d'appui numérique et du cyber","em",["cyber"],"Cesson-Sévigné","Ille-et-Vilaine",48.12,-1.6,"Commandement de l'appui terrestre numérique et cyber","Régiments de transmissions"],
+ ["BGEN","État-major de la brigade du génie","em",[],"Angers","Maine-et-Loire",47.47,-0.55,"Commandement de l'appui et de la logistique de théâtre","Génie (brigade recréée en 2024)"],
+ ["BLOG","État-major de la brigade logistique","em",[],"Montlhéry","Essonne",48.64,2.27,"Commandement de l'appui et de la logistique de théâtre","Régiments du train et soutien"],
+ ["BMAINT","État-major de la brigade de maintenance","em",[],"Versailles","Yvelines",48.8,2.13,"Commandement de l'appui et de la logistique de théâtre","Régiments du matériel (créée en 2024)"],
+ ["BMSC","État-major de la brigade des militaires de la sécurité civile","em",["secours"],"Paris","Paris",48.851,2.305,"","Commande les régiments d'instruction et d'intervention de la sécurité civile (UIISC)"],
+ ["ZT IDF","Commandement de la zone Terre Île-de-France (gouverneur militaire de Paris)","em",[],"Paris (Invalides)","Paris",48.856,2.312,"","Zone Terre Île-de-France, outre-mer et étranger"],
+ ["ZT NE","Commandement de la zone Terre Nord-Est","em",[],"Metz","Moselle",49.12,6.177,"","Zone Terre Nord-Est"],
+ ["ZT NO","Commandement de la zone Terre Nord-Ouest","em",[],"Rennes","Ille-et-Vilaine",48.11,-1.68,"","Zone Terre Nord-Ouest"],
+ ["ZT SE","Commandement de la zone Terre Sud-Est","em",[],"Lyon","Rhône",45.75,4.85,"","Zone Terre Sud-Est"],
+ ["ZT S","Commandement de la zone Terre Sud","em",[],"Marseille","Bouches-du-Rhône",43.296,5.38,"","Zone Terre Sud"],
+ ["ZT SO","Commandement de la zone Terre Sud-Ouest","em",[],"Bordeaux","Gironde",44.84,-0.58,"","Zone Terre Sud-Ouest"],
+ ["EMIA FAA","État-major interarmées des forces armées aux Antilles","em",[],"Fort-de-France","Martinique",14.607,-61.07,"","Commande les forces armées aux Antilles","om"],
+ ["EMIA FAG","État-major interarmées des forces armées en Guyane","em",[],"Cayenne","Guyane",4.938,-52.326,"","Commande les forces armées en Guyane","om"],
+ ["EMIA FAZSOI","État-major interarmées des forces armées dans la zone sud de l'océan Indien","em",[],"Saint-Denis","La Réunion",-20.88,55.45,"","Commande les forces de La Réunion et de Mayotte","om"],
+ ["EMIA FANC","État-major interarmées des forces armées de Nouvelle-Calédonie","em",[],"Nouméa","Nouvelle-Calédonie",-22.27,166.44,"","Commande les forces armées de Nouvelle-Calédonie","om"],
+ ["EMIA FAPF","État-major interarmées des forces armées en Polynésie française","em",[],"Arue (Tahiti)","Polynésie française",-17.52,-149.53,"","Commande les forces armées en Polynésie","om"],
+ ["EMIA FFDj","État-major interarmées des forces françaises stationnées à Djibouti","em",[],"Djibouti","Djibouti",11.574,43.15,"","Commande les forces françaises à Djibouti","etr"]
 ].map((r, i) => ({ id: i, ab: r[0], nm: r[1], arme: r[2], tags: r[3], town: r[4], dep: r[5], lat: r[6], lon: r[7], bde: r[8], role: r[9], zone: r[10] || "metro" }));
 
 // Grands camps d'entraînement : [nom, lat, lon, surface en hectares (arrondie)]
@@ -1154,6 +1203,7 @@ function glyph(arme) {
     case "alat": return `<path d="M7 5L15 10L7 15ZM23 5L15 10L23 15Z" ${s} fill="#fff" fill-opacity=".25"/>`;
     case "sou": return `<path d="M15 4V16M9 10H21" ${s} stroke-width="3"/>`;
     case "sma": return `<path d="M8 15L15 5L22 15" ${s}/>`;
+    case "em": return `<path d="M9 17V3M9 3H22L19 6.5L22 10H9" ${s}/><path d="M9 3H22L19 6.5L22 10H9Z" fill="#fff" fill-opacity=".35"/>`;
     case "ia": return `<path d="M15 3L17 8.5L23 10L17 11.5L15 17L13 11.5L7 10L13 8.5Z" fill="#fff"/>`;
   }
   return "";
@@ -1188,7 +1238,7 @@ const map = L.map("map", { zoomSnap: 1, minZoom: 2, maxZoom: 16, worldCopyJump: 
 window.__map = map;
 map.attributionControl.setPrefix(false);
 // Numéro de version affiché : à augmenter à chaque publication (sert à vérifier la version reçue sur le téléphone).
-const VERSION = "v0.14";
+const VERSION = "v0.15";
 map.attributionControl.addAttribution(VERSION + " · © contributeurs OpenStreetMap, OpenMapTiles · IGN (Admin Express) · Natural Earth · relief : AWS Terrain Tiles · villes GeoNames");
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
